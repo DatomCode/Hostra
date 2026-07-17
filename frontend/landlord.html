@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post a Listing | Hostra</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="container">
+            <a href="index.html" class="logo">Hostra</a>
+            <div class="header-actions">
+                <a href="landlord-dashboard.html" class="btn-text">Dashboard</a>
+                <a href="wallet.html" class="btn-text">Wallet</a>
+                <a href="profile.html" class="btn-text" title="Profile"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></a>
+                <button id="logoutBtn" class="btn btn-blue-outline">Log Out</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container dashboard-content" style="padding-top: 40px; padding-bottom: 60px; gap: 40px;">
+        <div>
+            <h2>Post a New Listing</h2>
+            <p>Upload your property details. Once verified by a student, it goes live.</p>
+        </div>
+        
+        <div class="bento-card" style="max-width: 600px; margin: 0 auto; width: 100%;">
+            <form id="listingForm">
+                <div class="error-message" id="listingError"></div>
+                <div style="color: var(--verified-green); font-family: 'Outfit', sans-serif; font-weight: 600; margin-bottom: 1rem; display: none;" id="listingSuccess">Listing submitted successfully!</div>
+                
+                <div class="form-group">
+                    <label for="address">Property Address</label>
+                    <input type="text" id="address" required placeholder="e.g. 15 Adenike Area, Ogbomoso">
+                </div>
+                
+                <div class="form-group">
+                    <label for="area">Area</label>
+                    <input type="text" id="area" required placeholder="e.g. UnderG, Adenike, Stadium">
+                </div>
+                
+                <div class="form-group">
+                    <label for="price">Price (Per Year)</label>
+                    <input type="text" id="price" required placeholder="e.g. ₦150,000">
+                </div>
+                
+                <div class="form-group">
+                    <label for="claims">Features / Claims</label>
+                    <textarea id="claims" required placeholder="e.g. Running water, tiled floor, fenced, secure"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="image">Property Image</label>
+                    <input type="file" id="image" accept="image/*" required style="padding: 10px;">
+                </div>
+                
+                <button type="submit" class="btn btn-yellow btn-submit" id="submitBtn">Submit Listing</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script>
+        // Protect route
+        if (!session.isAuthenticated()) {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await api.logout();
+            } catch (err) {
+                console.error("Logout API failed, but clearing session anyway.");
+            } finally {
+                session.clear();
+                window.location.href = 'index.html';
+            }
+        });
+
+        document.getElementById('listingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const errorMsg = document.getElementById('listingError');
+            const successMsg = document.getElementById('listingSuccess');
+            
+            btn.textContent = 'Submitting...';
+            btn.disabled = true;
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('address', document.getElementById('address').value);
+            formData.append('price', document.getElementById('price').value);
+            formData.append('landlord_claims', document.getElementById('claims').value);
+            formData.append('area', document.getElementById('area').value);
+            formData.append('image', document.getElementById('image').files[0]);
+
+            try {
+                const data = await api.createListing(formData);
+                if (data.success) {
+                    successMsg.style.display = 'block';
+                    document.getElementById('listingForm').reset();
+                }
+            } catch (err) {
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = 'Failed to submit listing. Check console for details.';
+            } finally {
+                btn.textContent = 'Submit Listing';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

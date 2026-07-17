@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | Hostra</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .role-toggle {
+            display: flex;
+            background: var(--bg-main);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 2rem;
+            border: 2px solid #E5E7EB;
+        }
+        .role-btn {
+            flex: 1;
+            padding: 0.75rem;
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            color: #6B7280;
+            transition: all 0.2s ease;
+        }
+        .role-btn.active {
+            background: white;
+            color: var(--campus-blue);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .conditional-field {
+            display: none;
+        }
+        .conditional-field.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <header class="container" style="padding-top: 24px;">
+        <a href="index.html" class="logo">Hostra</a>
+    </header>
+
+    <main class="container">
+        <div class="auth-container">
+            <h2>Join Hostra</h2>
+            <p style="margin-bottom: 2rem;">Create your account to get started.</p>
+            
+            <div class="role-toggle">
+                <div class="role-btn active" id="btnStudent" onclick="setRole('student')">I am a Student</div>
+                <div class="role-btn" id="btnLandlord" onclick="setRole('landlord')">I am a Landlord</div>
+            </div>
+
+            <form id="signupForm" class="auth-form">
+                <div class="error-message" id="errorMessage">Sign up failed.</div>
+                
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" required placeholder="Tunde O.">
+                </div>
+
+                <!-- Student specific fields -->
+                <div class="form-group conditional-field student-field active">
+                    <label for="matricNumber">Matric Number</label>
+                    <input type="text" id="matricNumber" placeholder="e.g. 210001">
+                </div>
+                <div class="form-group conditional-field student-field active">
+                    <label for="schoolEmail">School Email</label>
+                    <input type="email" id="schoolEmail" placeholder="student@lautech.edu.ng">
+                </div>
+                <div class="form-group conditional-field student-field active">
+                    <label for="studentArea">Area</label>
+                    <input type="text" id="studentArea" placeholder="e.g. UnderG">
+                </div>
+                
+                <!-- Added ID Card Upload specifically for students -->
+                <div class="form-group conditional-field student-field active">
+                    <label for="studentIdFile">LAUTECH ID Card (Optional, required to earn as Verifier)</label>
+                    <input type="file" id="studentIdFile" accept="image/*" style="padding: 10px;">
+                </div>
+
+                <!-- Landlord specific fields -->
+                <div class="form-group conditional-field landlord-field">
+                    <label for="phoneNumber">Phone Number</label>
+                    <input type="tel" id="phoneNumber" placeholder="e.g. 08012345678">
+                </div>
+                <div class="form-group conditional-field landlord-field">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="landlord@email.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                
+                <button type="submit" class="btn btn-yellow btn-submit" id="signupBtn">Sign Up</button>
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <span style="color: #6B7280;">Already have an account?</span> <a href="login.html" style="color: var(--campus-blue); font-weight: 600; text-decoration: none;">Log In</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script>
+        if (session.isAuthenticated()) {
+            const role = session.getRole();
+            window.location.href = role === 'landlord' ? 'landlord-dashboard.html' : 'student-dashboard.html';
+        }
+
+        let currentRole = 'student';
+
+        function setRole(role) {
+            currentRole = role;
+            
+            document.getElementById('btnStudent').classList.toggle('active', role === 'student');
+            document.getElementById('btnLandlord').classList.toggle('active', role === 'landlord');
+            
+            document.querySelectorAll('.student-field').forEach(el => {
+                el.classList.toggle('active', role === 'student');
+                const input = el.querySelector('input');
+                // Removed strict required check for image file so they can skip, but keep strings required
+                if (input && input.type !== 'file') input.required = (role === 'student');
+            });
+            
+            document.querySelectorAll('.landlord-field').forEach(el => {
+                el.classList.toggle('active', role === 'landlord');
+                const input = el.querySelector('input');
+                if (input) input.required = (role === 'landlord');
+            });
+        }
+        
+        setRole('student');
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('signupBtn');
+            const errorMsg = document.getElementById('errorMessage');
+
+            btn.textContent = 'Signing up...';
+            btn.disabled = true;
+            errorMsg.style.display = 'none';
+            
+            const emailValue = currentRole === 'student' 
+                ? document.getElementById('schoolEmail').value 
+                : document.getElementById('email').value;
+
+            const userData = {
+                role: currentRole,
+                email: emailValue,
+                password: document.getElementById('password').value,
+                name: document.getElementById('fullName').value,
+                area: currentRole === 'student' ? document.getElementById('studentArea').value : null
+            };
+            
+            // Add image object manually if student provides it
+            if (currentRole === 'student') {
+                const fileInput = document.getElementById('studentIdFile');
+                if (fileInput.files.length > 0) {
+                    userData.id_image = fileInput.files[0];
+                }
+            }
+
+            try {
+                const data = await api.signup(userData);
+                if (data.success) {
+                    session.set(data.token, data.email, data.role, data.name, data.area);
+                    window.location.href = data.role === 'landlord' ? 'landlord-dashboard.html' : 'student-dashboard.html';
+                }
+            } catch (err) {
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = 'Failed to connect. Please try again.';
+            } finally {
+                btn.textContent = 'Sign Up';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

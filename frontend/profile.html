@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | Hostra</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+    <header class="dashboard-header">
+        <div class="container">
+            <a href="index.html" class="logo">Hostra</a>
+            <div class="header-actions" id="dynamicNav">
+                <a href="student-dashboard.html" id="navDashboard" class="btn-text">Dashboard</a>
+                <button id="logoutBtn" class="btn btn-blue-outline">Log Out</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container dashboard-content" style="padding-top: 40px; gap: 40px; max-width: 600px; margin: 0 auto;">
+        <div style="text-align: center;">
+            <h2>My Profile</h2>
+            <p>Manage your account details and verification status.</p>
+        </div>
+
+        <div id="loadingMsg" style="text-align: center; padding: 2rem; color: #6B7280;">Loading profile...</div>
+
+        <!-- Wallet Balance Card (For Students Only) -->
+        <div id="walletCard" class="bento-card" style="display: none; padding: 2rem; text-align: center; margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 1rem;">Wallet Balance</h3>
+            <div style="font-size: 3rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; color: var(--verified-green);">
+                <span style="font-size: 1.5rem; opacity: 0.8;">₦</span><span id="profileWalletBalance">0</span>
+            </div>
+            <a href="wallet.html" class="btn btn-blue-outline" style="text-decoration: none;">View Wallet History</a>
+        </div>
+
+        <!-- Identity Verification Block -->
+        <div id="identityCard" class="bento-card" style="display: none; padding: 2rem; margin-bottom: 2rem; background: #F8FAFC; border: 1px solid #CBD5E1;">
+            <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                🛡️ Verifier Status
+            </h3>
+            <p style="font-size: 0.9rem; color: #475569; margin-bottom: 1rem;">Upload your LAUTECH Student ID to unlock the ability to verify houses and earn money.</p>
+            
+            <form id="idUploadForm">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <input type="file" id="idImage" accept="image/*" required style="padding: 10px; background: white;">
+                </div>
+                <button type="submit" class="btn btn-dark" id="btnUploadId" style="width: 100%;">Upload ID Card</button>
+                <div id="idStatusMsg" style="margin-top: 1rem; font-weight: 500; font-size: 0.9rem; text-align: center;"></div>
+            </form>
+        </div>
+
+        <div id="profileContent" class="bento-card" style="display: none; padding: 2.5rem;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <img src="images/default_avatar.png" alt="Profile Image" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #E5E7EB;">
+            </div>
+            <h3 style="margin-bottom: 2rem; border-bottom: 1px solid #E5E7EB; padding-bottom: 1rem;">Account Details</h3>
+            
+            <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; border-bottom: 1px solid #F3F4F6; padding-bottom: 1rem;">
+                <span style="font-weight: 600; color: #4B5563;">Name</span>
+                <span id="profileName" style="color: #111827; font-weight: 500;"></span>
+            </div>
+            <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; border-bottom: 1px solid #F3F4F6; padding-bottom: 1rem;">
+                <span style="font-weight: 600; color: #4B5563;">Email</span>
+                <span id="profileEmail" style="color: #111827; font-weight: 500;"></span>
+            </div>
+            <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; border-bottom: 1px solid #F3F4F6; padding-bottom: 1rem;">
+                <span style="font-weight: 600; color: #4B5563;">Role</span>
+                <span id="profileRole" style="text-transform: capitalize; color: #111827; font-weight: 500;"></span>
+            </div>
+
+            <form id="profileForm">
+                <div class="form-group">
+                    <label for="profileArea">Area</label>
+                    <input type="text" id="profileArea" placeholder="e.g. UnderG">
+                </div>
+                
+                <div id="statusMsg" style="margin-bottom: 1rem; font-weight: 500; font-size: 0.9rem; text-align: center;"></div>
+                
+                <button type="submit" class="btn btn-yellow" style="width: 100%;">Save Changes</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!session.isAuthenticated()) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const role = session.getRole();
+            const navDashboard = document.getElementById('navDashboard');
+            if (role === 'landlord') {
+                navDashboard.href = 'landlord-dashboard.html';
+            }
+
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                try { await api.logout(); } catch (err) {}
+                session.clear();
+                window.location.href = 'index.html';
+            });
+
+            loadProfile();
+        });
+
+        async function loadProfile() {
+            try {
+                const data = await api.getUserProfile();
+                document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('profileContent').style.display = 'block';
+                
+                document.getElementById('profileName').textContent = data.name;
+                document.getElementById('profileEmail').textContent = data.email;
+                document.getElementById('profileRole').textContent = data.role;
+                document.getElementById('profileArea').value = data.area || '';
+
+                if (data.role === 'student') {
+                    document.getElementById('walletCard').style.display = 'block';
+                    document.getElementById('profileWalletBalance').textContent = (data.wallet_balance || 0).toLocaleString();
+                    
+                    // Show identity upload if not verified yet
+                    if (!data.is_id_verified) {
+                        document.getElementById('identityCard').style.display = 'block';
+                    }
+                }
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loadingMsg').textContent = 'Failed to load profile data.';
+                document.getElementById('loadingMsg').style.color = 'red';
+            }
+        }
+
+        // Handle Profile Update
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const statusMsg = document.getElementById('statusMsg');
+            const newArea = document.getElementById('profileArea').value;
+            
+            statusMsg.textContent = 'Saving...';
+            statusMsg.style.color = '#4B5563';
+
+            try {
+                const data = await api.updateUserProfile(newArea);
+                if (data.success) {
+                    statusMsg.textContent = 'Profile updated successfully!';
+                    statusMsg.style.color = 'var(--verified-green)';
+                    setTimeout(() => { statusMsg.textContent = ''; }, 3000);
+                }
+            } catch (err) {
+                console.error(err);
+                statusMsg.textContent = 'Failed to update profile. Try again.';
+                statusMsg.style.color = '#EF4444';
+            }
+        });
+
+        // Handle ID Upload
+        document.getElementById('idUploadForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnUploadId');
+            const statusMsg = document.getElementById('idStatusMsg');
+            
+            btn.disabled = true;
+            btn.innerText = 'Uploading...';
+            statusMsg.textContent = '';
+
+            const formData = new FormData();
+            formData.append('id_image', document.getElementById('idImage').files[0]);
+
+            try {
+                await api.uploadStudentID(formData);
+                statusMsg.textContent = 'ID Card uploaded successfully! You can now verify properties.';
+                statusMsg.style.color = 'var(--verified-green)';
+                btn.style.display = 'none';
+            } catch (err) {
+                statusMsg.textContent = 'Failed to upload ID. Try again.';
+                statusMsg.style.color = '#EF4444';
+                btn.disabled = false;
+                btn.innerText = 'Upload ID Card';
+            }
+        });
+    </script>
+</body>
+</html>

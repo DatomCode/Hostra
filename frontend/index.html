@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hostra | Premium Student Housing</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="header-full">
+        <div class="container header-container">
+            <a href="index.html" class="logo">Hostra.</a>
+            <div class="header-actions">
+                <a href="login.html" class="btn-text">Log In</a>
+                <a href="signup.html" class="btn btn-dark">Sign Up</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        
+        <!-- Hero Section -->
+        <section class="hero-wrapper">
+            <div class="container hero-grid">
+                <div class="hero-content">
+                    <h1 class="hero-animate-up" style="animation-delay: 0.1s;">Don't Let Fake Agents Steal Your House Rent.</h1>
+                    <p class="hero-animate-up" style="margin-bottom: 2.5rem; font-size: 1.25rem; animation-delay: 0.25s;">Hostra is the premium student-powered platform where every off-campus hostel is physically verified before you pay a dime.</p>
+                    <div class="hero-animate-up" style="animation-delay: 0.4s;">
+                        <a href="signup.html" class="btn btn-dark" style="font-size: 1.25rem; padding: 1.25rem 3rem;">Find Your Home</a>
+                    </div>
+                </div>
+                <div class="hero-image-wrapper">
+                    <!-- Referencing the generated hero image -->
+                    <img src="images/hero_house.png" alt="Luxury Modern House" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNFMkU4RjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY0NzQ4YiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
+                </div>
+            </div>
+
+            <!-- Floating Search Bar -->
+            <div class="floating-search-container">
+                <div class="search-field">
+                    <label>Location</label>
+                    <input type="text" placeholder="e.g. UnderG, Adenike...">
+                </div>
+                <div class="search-field">
+                    <label>Property Type</label>
+                    <select>
+                        <option>Self Con</option>
+                        <option>Single Room</option>
+                        <option>Flat</option>
+                    </select>
+                </div>
+                <div class="search-field">
+                    <label>Budget (Max)</label>
+                    <input type="text" placeholder="₦200,000">
+                </div>
+                <button class="btn btn-dark" onclick="window.location.href='student-dashboard.html'">Search</button>
+            </div>
+        </section>
+
+        <!-- Stats & Features Section -->
+        <section class="container">
+            <div class="stats-top">
+                <img src="images/stats_house.png" alt="Modern Apartment Building" class="stats-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNFMkU4RjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY0NzQ4YiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
+                <div class="stats-content">
+                    <h2>We Help You Find Safe Student Housing.</h2>
+                    <div class="stats-numbers">
+                        <div class="stat-item">
+                            <h3 class="count-up" data-count="500">0+</h3>
+                            <p>Verified Houses</p>
+                        </div>
+                        <div class="stat-item">
+                            <h3 class="count-up" data-count="100">0+</h3>
+                            <p>Active Verifiers</p>
+                        </div>
+                        <div class="stat-item">
+                            <h3 class="count-up" data-count="0">₦0</h3>
+                            <p>Lost to Scams</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card reveal-item" style="transition-delay: 0s;">
+                    <div class="feature-icon">
+                        <!-- Shield Icon -->
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    </div>
+                    <h3>100% Verified</h3>
+                    <p>Every single property on Hostra is physically inspected by a real student.</p>
+                </div>
+                <div class="feature-card reveal-item" style="transition-delay: 0.1s;">
+                    <div class="feature-icon">
+                        <!-- AI Icon -->
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <h3>AI Checked</h3>
+                    <p>Our intelligent system cross-references inspection photos with landlord claims.</p>
+                </div>
+                <div class="feature-card reveal-item" style="transition-delay: 0.2s;">
+                    <div class="feature-icon">
+                        <!-- Money Icon -->
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 1v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3>Earn Money</h3>
+                    <p>Students can sign up to become verifiers and earn cash verifying houses nearby.</p>
+                </div>
+                <div class="feature-card reveal-item" style="transition-delay: 0.3s;">
+                    <div class="feature-icon">
+                        <!-- Home Icon -->
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    </div>
+                    <h3>Peace of Mind</h3>
+                    <p>What you see on the platform is exactly what you get when you move in.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials Section -->
+        <section class="container testimonials-section">
+            <h2>What LAUTECH Students Say</h2>
+            <div class="testimonials-grid">
+                
+                <!-- Testimonial 1 -->
+                <div class="testimonial-card reveal-item" style="transition-delay: 0s;">
+                    <div class="test-img-wrapper">
+                        <img src="images/test_house1.png" alt="Property" class="prop-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNFMkU4RjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY0NzQ4YiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
+                        <img src="images/test_profile1.png" alt="Adeola" class="test-profile-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNFMkU4RjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY0NzQ4YiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
+                    </div>
+                    <div class="test-content">
+                        <div class="test-rating">★★★★★</div>
+                        <div class="test-author">Adeola B. <span class="verified-seal"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></span></div>
+                        <p class="test-quote">"I almost lost my school fees to a fake agent on WhatsApp. Hostra saved me. I only look at verified places now."</p>
+                    </div>
+                </div>
+
+                <!-- Testimonial 2 -->
+                <div class="testimonial-card reveal-item" style="transition-delay: 0.1s;">
+                    <div class="test-img-wrapper">
+                        <img src="images/test_house2.png" alt="Property" class="prop-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNFMkU4RjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY0NzQ4YiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
+                        <img src="images/test_profile2.png" alt="Tunde" class="test-profile-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNFMkU4RjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY0NzQ4YiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
+                    </div>
+                    <div class="test-content">
+                        <div class="test-rating">★★★★★</div>
+                        <div class="test-author">Tunde O. <span class="verified-seal"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></span></div>
+                        <p class="test-quote">"The verification job is easy and transparent. I make some extra cash just confirming houses near my hostel."</p>
+                    </div>
+                </div>
+
+                <!-- Testimonial 3 -->
+                <div class="testimonial-card reveal-item" style="transition-delay: 0.2s;">
+                    <div class="test-img-wrapper">
+                        <img src="images/test_house3.png" alt="Property" class="prop-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNFMkU4RjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY0NzQ4YiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
+                        <img src="images/test_profile3.png" alt="Chioma" class="test-profile-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNFMkU4RjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY0NzQ4YiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
+                    </div>
+                    <div class="test-content">
+                        <div class="test-rating">★★★★★</div>
+                        <div class="test-author">Chioma N. <span class="verified-seal"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></span></div>
+                        <p class="test-quote">"Finally, peace of mind. What you see on Hostra is exactly what you get. The verified badge is everything."</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer-massive">
+        <div class="container footer-grid">
+            <div>
+                <a href="index.html" class="logo">Hostra.</a>
+                <p style="margin-top: 1rem; max-width: 250px;">The premium student-powered real estate verification platform.</p>
+            </div>
+            <div class="footer-col">
+                <h4>About</h4>
+                <ul>
+                    <li><a href="about.html">Our Story</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="support.html">Help Center</a></li>
+                    <li><a href="support.html">Trust & Safety</a></li>
+                    <li><a href="support.html#contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Socials</h4>
+                <ul>
+                    <li>Coming Soon</li>
+                </ul>
+            </div>
+        </div>
+        <div class="container">
+            <div class="footer-bottom">
+                <div>&copy; 2026 Hostra. Building trust in Ogbomoso.</div>
+                <div>
+                    <a href="#" style="color: inherit; text-decoration: none; margin-right: 1.5rem;">Privacy Policy</a>
+                    <a href="#" style="color: inherit; text-decoration: none;">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/animations.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (session.isAuthenticated()) {
+            const role = session.getRole();
+            window.location.href = role === 'landlord' ? 'landlord-dashboard.html' : 'student-dashboard.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roommate Match - Hostra</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .btn-record {
+            background-color: #EF4444;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-record.recording {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #E5E7EB;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        .match-name {
+            font-size: 1.5rem;
+            font-family: 'Clash Display', sans-serif;
+            font-weight: 700;
+            color: var(--text-heavy);
+        }
+        .match-score {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--verified-green);
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .match-reason {
+            color: var(--verified-green);
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .match-summary {
+            color: #4A5568;
+            font-style: italic;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .traits-badge-container {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .trait-badge {
+            background-color: var(--bg-cream);
+            color: #4A5568;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #E5E7EB;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="dashboard-header">
+        <div class="container">
+            <a href="index.html" class="logo">Hostra.</a>
+            <div class="header-actions">
+                <a href="student-dashboard.html" class="btn-text">Dashboard</a>
+                <a href="wallet.html" class="btn-text">Wallet</a>
+                <button id="logoutBtn" class="btn btn-blue-outline">Log Out</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container dashboard-content" style="padding-top: 40px; gap: 40px;">
+        <div style="text-align: center;">
+            <h2>Roommate Match</h2>
+            <p>Find your perfect off-campus roommate and split rent.</p>
+        </div>
+
+        <div class="bento-card">
+            <h3>Your Lifestyle Profile</h3>
+            <p>Describe your sleep schedule, noise tolerance, and how clean you like to keep things. Type it out or record a voice note!</p>
+            <div class="form-group">
+                <textarea id="profile-text" placeholder="I'm a night owl, I don't mind noise, and I keep common areas pretty tidy..." style="min-height: 120px; width: 100%;"></textarea>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button class="btn-record" id="btn-record">🎤 Record Voice Note</button>
+                <button class="btn btn-yellow" id="btn-submit">Update Profile</button>
+            </div>
+            <p id="record-status" style="margin-top: 1rem; font-weight: 600;"></p>
+        </div>
+
+        <div>
+            <h3 style="margin-bottom: 2rem;">Your Top Matches</h3>
+            <div id="matches-list" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div style="color: #6B7280;">Update your profile to see matches...</div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script>
+        if (!session.isAuthenticated() || session.getRole() !== 'student') {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try { await api.logout(); } catch (err) {}
+            session.clear();
+            window.location.href = 'index.html';
+        });
+
+        const matchesList = document.getElementById('matches-list');
+        const btnRecord = document.getElementById('btn-record');
+        const btnSubmit = document.getElementById('btn-submit');
+        const profileTextArea = document.getElementById('profile-text');
+        const recordStatus = document.getElementById('record-status');
+
+        let recognition;
+        let isRecording = false;
+
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onstart = function() {
+                isRecording = true;
+                btnRecord.classList.add('recording');
+                btnRecord.innerText = '⏹ Stop Recording';
+                recordStatus.innerText = 'Listening...';
+                recordStatus.style.color = '#F59E0B';
+            };
+
+            recognition.onresult = function(event) {
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    }
+                }
+                if (finalTranscript) {
+                    const currentVal = profileTextArea.value;
+                    profileTextArea.value = currentVal ? currentVal + ' ' + finalTranscript : finalTranscript;
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error', event.error);
+                recordStatus.innerText = 'Error recognizing speech: ' + event.error;
+                recordStatus.style.color = '#EF4444';
+                stopRecording();
+            };
+
+            recognition.onend = function() {
+                stopRecording();
+            };
+        } else {
+            btnRecord.style.display = 'none';
+            recordStatus.innerText = 'Voice recording not supported in this browser.';
+            recordStatus.style.color = '#EF4444';
+        }
+
+        function toggleRecording() {
+            if (!recognition) return;
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            btnRecord.classList.remove('recording');
+            btnRecord.innerText = '🎤 Record Voice Note';
+            if (recordStatus.innerText === 'Listening...') {
+                recordStatus.innerText = 'Recording stopped.';
+                recordStatus.style.color = '#6B7280';
+            }
+        }
+
+        btnRecord.addEventListener('click', toggleRecording);
+
+        async function handleInviteToSplitRent(roommateId, btnElement) {
+            const listingId = prompt("Enter the ID of the property listing you want to split (Demo mode):");
+            if (!listingId) return;
+
+            btnElement.disabled = true;
+            btnElement.innerText = "Sending Invite...";
+
+            try {
+                await api.sendSplitRentInvitation(roommateId, listingId);
+                btnElement.innerText = "Invite Sent ✅";
+                btnElement.style.backgroundColor = "var(--verified-green)";
+                btnElement.style.color = "white";
+                btnElement.style.borderColor = "var(--verified-green)";
+            } catch (err) {
+                alert("Failed to send split rent invite.");
+                btnElement.disabled = false;
+                btnElement.innerText = "Invite to Split Rent";
+            }
+        }
+
+        async function loadMatches() {
+            try {
+                const data = await api.getRoommateMatches();
+                matchesList.innerHTML = '';
+                
+                if (!data.matches || data.matches.length === 0) {
+                    matchesList.innerHTML = '<p style="color: #6B7280">No matches found yet. Try updating your profile or check back later!</p>';
+                    return;
+                }
+
+                data.matches.forEach(match => {
+                    const card = document.createElement('div');
+                    card.className = 'bento-card';
+                    card.style.padding = '2rem';
+                    
+                    card.innerHTML = `
+                        <div class="match-header">
+                            <div class="match-name">${match.name}</div>
+                            <div class="match-score">${match.score}/3 Match</div>
+                        </div>
+                        <div class="match-reason">${match.reason}</div>
+                        <div class="match-summary">"${match.summary}"</div>
+                        <div class="traits-badge-container" style="margin-bottom: 1.5rem;">
+                            <span class="trait-badge">Sleep: ${match.traits.sleep_schedule || 'Unknown'}</span>
+                            <span class="trait-badge">Noise: ${match.traits.noise_tolerance || 'Unknown'}</span>
+                            <span class="trait-badge">Clean: ${match.traits.cleanliness || 'Unknown'}</span>
+                        </div>
+                        <button class="btn btn-blue-outline split-invite-btn" style="width: 100%;">Invite to Split Rent</button>
+                    `;
+
+                    // Attach event listener dynamically
+                    const inviteBtn = card.querySelector('.split-invite-btn');
+                    inviteBtn.addEventListener('click', () => handleInviteToSplitRent(match.id, inviteBtn));
+
+                    matchesList.appendChild(card);
+                });
+            } catch (e) {
+                matchesList.innerHTML = '<p style="color: #EF4444">Failed to load matches.</p>';
+                console.error(e);
+            }
+        }
+
+        btnSubmit.addEventListener('click', async () => {
+            const text = profileTextArea.value.trim();
+            if (!text) {
+                alert('Please tell us about your lifestyle.');
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            btnSubmit.innerText = 'Analyzing...';
+            recordStatus.innerText = '';
+
+            try {
+                await api.submitRoommateProfile(text);
+                
+                recordStatus.innerText = 'Profile saved! AI extracted your traits successfully.';
+                recordStatus.style.color = 'var(--verified-green)';
+                
+                matchesList.innerHTML = '<div style="color: #6B7280">Finding your best matches...</div>';
+                setTimeout(loadMatches, 1000);
+            } catch (e) {
+                alert(e.message);
+                console.error(e);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = 'Update Profile';
+            }
+        });
+
+        loadMatches();
+    </script>
+</body>
+</html>

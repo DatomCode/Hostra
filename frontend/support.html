@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support & FAQ | Hostra</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .faq-group {
+            margin-bottom: 3rem;
+        }
+        .faq-group h3 {
+            margin-bottom: 1.5rem;
+            color: var(--campus-blue);
+            border-bottom: 2px solid var(--card-soft);
+            padding-bottom: 0.5rem;
+        }
+        details {
+            background: var(--card-surface);
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(17,24,39,0.03);
+        }
+        summary {
+            padding: 1.25rem 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-heavy);
+            font-size: 1.1rem;
+        }
+        summary::-webkit-details-marker {
+            display: none;
+        }
+        summary::after {
+            content: '+';
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--campus-blue);
+        }
+        details[open] summary::after {
+            content: '−';
+        }
+        .faq-content {
+            padding: 0 1.5rem 1.25rem;
+            color: #4A5568;
+            line-height: 1.6;
+        }
+        
+        .contact-section {
+            background-color: var(--bg-cream);
+            border-radius: 16px;
+            padding: 3rem;
+            margin-top: 4rem;
+        }
+        .contact-section h2 { margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+    <header class="header-full">
+        <div class="container header-container">
+            <a href="index.html" class="logo">Hostra.</a>
+            <div class="header-actions" id="header-actions">
+                <a href="login.html" class="btn-text">Log In</a>
+                <a href="signup.html" class="btn btn-dark">Sign Up</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container" style="padding-top: 60px; max-width: 800px; gap: 40px;">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h1>Help Center & FAQ</h1>
+            <p>Everything you need to know about how Hostra works.</p>
+        </div>
+
+        <div class="faq-group reveal-item" style="transition-delay: 0s;">
+            <h3>Getting Started</h3>
+            <details>
+                <summary>How do I find a verified house?</summary>
+                <div class="faq-content">Browse listings from your dashboard, every house you see there has already passed inspection. No pending or unverified listings ever show up in your feed.</div>
+            </details>
+            <details>
+                <summary>How do I become a Verifier and start earning?</summary>
+                <div class="faq-content">Sign up as a student, head to Verify Houses from your dashboard, and accept any pending job near you. Take the photos, submit the report, get paid once it's approved.</div>
+            </details>
+        </div>
+
+        <div class="faq-group reveal-item" style="transition-delay: 0.1s;">
+            <h3>Trust & Safety</h3>
+            <details>
+                <summary>What does the Verified badge actually mean?</summary>
+                <div class="faq-content">It means a real student physically visited that house, took live photos on site, and our AI confirmed those photos match what the landlord claimed, water, tiles, fan, everything.</div>
+            </details>
+            <details>
+                <summary>What happens if a listing turns out to be fake?</summary>
+                <div class="faq-content">It never goes live in the first place. If the photos don't match the claims, the listing stays hidden and the landlord is notified why.</div>
+            </details>
+            <details>
+                <summary>What if the AI gets it wrong?</summary>
+                <div class="faq-content">No AI is perfect, so every rejected report is visible to the landlord with the reason attached, and listings can be resubmitted with clearer photos if something was genuinely missed.</div>
+            </details>
+        </div>
+
+        <div class="faq-group reveal-item" style="transition-delay: 0.2s;">
+            <h3>For Landlords</h3>
+            <details>
+                <summary>How do I list my property?</summary>
+                <div class="faq-content">Sign up as a landlord, go to Post a New Listing, add your address, price, and claims, and upload reference photos. It stays pending until a verifier confirms it.</div>
+            </details>
+            <details>
+                <summary>What happens after I submit a listing?</summary>
+                <div class="faq-content">A nearby student verifier gets notified, visits in person, and submits a report. If it's approved, your listing goes live with the Verified badge automatically.</div>
+            </details>
+        </div>
+
+        <div class="contact-section bento-card reveal-item" id="contact" style="transition-delay: 0.3s;">
+            <h2>Still stuck?</h2>
+            <p>Reach us directly, and we'll usually get back to you within a day.</p>
+            <form style="margin-top: 2rem;">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" placeholder="Your Name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea placeholder="How can we help?" style="min-height: 120px;" required></textarea>
+                </div>
+                <button type="button" class="btn btn-dark btn-submit">Send Message</button>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer-massive">
+        <div class="container footer-grid">
+            <div>
+                <a href="index.html" class="logo">Hostra.</a>
+                <p style="margin-top: 1rem; max-width: 250px;">The premium student-powered real estate verification platform.</p>
+            </div>
+            <div class="footer-col">
+                <h4>About</h4>
+                <ul>
+                    <li><a href="about.html">Our Story</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="support.html">Help Center</a></li>
+                    <li><a href="support.html">Trust & Safety</a></li>
+                    <li><a href="support.html#contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Socials</h4>
+                <ul>
+                    <li>Coming Soon</li>
+                </ul>
+            </div>
+        </div>
+        <div class="container">
+            <div class="footer-bottom">
+                <div>&copy; 2026 Hostra. Building trust in Ogbomoso.</div>
+                <div>
+                    <a href="#" style="color: inherit; text-decoration: none; margin-right: 1.5rem;">Privacy Policy</a>
+                    <a href="#" style="color: inherit; text-decoration: none;">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/animations.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        if (session.isAuthenticated()) {
+            const role = session.getRole();
+            const dashLink = role === 'landlord' ? 'landlord-dashboard.html' : 'student-dashboard.html';
+            document.getElementById('header-actions').innerHTML = `
+                <a href="${dashLink}" class="btn-text">Dashboard</a>
+                <button id="logoutBtn" class="btn btn-blue-outline">Log Out</button>
+            `;
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                try { await api.logout(); } catch (err) {}
+                session.clear();
+                window.location.href = 'index.html';
+            });
+        }
+    </script>
+</body>
+</html>

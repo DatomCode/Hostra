@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listing Details | Hostra</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        @media (max-width: 900px) {
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+        .listing-image {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            object-fit: cover;
+            border-radius: 16px;
+            background: #E5E7EB;
+        }
+        .listing-price {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+        .listing-address {
+            color: #4B5563;
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .sentiment-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .sentiment-positive { background-color: rgba(16, 185, 129, 0.1); color: var(--verified-green); }
+        .sentiment-negative { background-color: rgba(239, 68, 68, 0.1); color: #EF4444; }
+        .sentiment-neutral { background-color: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+        
+        .review-text {
+            color: #4A5568;
+            font-size: 1rem;
+            line-height: 1.6;
+            font-style: italic;
+            margin: 1rem 0;
+        }
+        .review-summary {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-heavy);
+        }
+        .date-stamp {
+            font-size: 0.85rem;
+            color: #A0AEC0;
+        }
+        .btn-record {
+            background-color: #EF4444;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-record.recording {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .star-rating {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .star-rating input {
+            display: none;
+        }
+        .star-rating label {
+            cursor: pointer;
+            font-size: 2rem;
+            color: #E5E7EB;
+        }
+        .star-rating input:checked ~ label,
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #FBBF24;
+        }
+        .static-stars {
+            color: #FBBF24;
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="dashboard-header">
+        <div class="container">
+            <a href="index.html" class="logo">Hostra.</a>
+            <div class="header-actions">
+                <a href="student-dashboard.html" class="btn-text">Dashboard</a>
+                <a href="wallet.html" class="btn-text">Wallet</a>
+                <button id="logoutBtn" class="btn btn-blue-outline">Log Out</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container dashboard-content" style="padding-top: 40px; gap: 40px;">
+        <div id="loadingMsg" style="text-align: center; font-size: 1.25rem;">Loading property details...</div>
+        
+        <div id="contentWrapper" style="display: none;">
+            <!-- Top Section: Image & Details -->
+            <div class="detail-grid">
+                <div>
+                    <img id="detailImage" src="" alt="Property" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNFMkU4RjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY0NzQ4YiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
+                </div>
+                <div class="bento-card">
+                    <div id="detailPrice" class="listing-price"></div>
+                    <div id="detailAddress" class="listing-address"></div>
+                    
+                    <div style="display: inline-flex; align-items: center; color: var(--verified-green); font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.25rem; margin-bottom: 2rem;">
+                        <span class="verified-seal" style="margin-left: 0; margin-right: 8px; width: 24px; height: 24px;">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span> 
+                        Hostra Verified
+                    </div>
+                    
+                    <h3 style="margin-bottom: 0.5rem;">Landlord Claims</h3>
+                    <p id="detailClaims" style="margin-bottom: 2rem;"></p>
+                    
+                    <h3 style="margin-bottom: 0.5rem;">Tenancy Agreement</h3>
+                    <p>Read the fine print before you pay. Upload the contract to check for hidden clauses.</p>
+                    <a id="btnTranslator" href="#" class="btn btn-blue-outline" style="margin-top: 1rem;">Run Agreement Translator</a>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 40px 0;">
+
+            <!-- Payment Section -->
+            <div id="paymentSection" style="display: none; margin-bottom: 3rem; text-align: center;">
+                <div class="bento-card" style="display: inline-block; padding: 2rem; width: 100%; max-width: 400px; margin: 0 auto; text-align: left;">
+                    <h3 style="margin-bottom: 1.5rem; text-align: center;">Rent Payment</h3>
+                    
+                    <div id="paymentUnpaidState" style="display: none;">
+                        <button id="btnPayRent" class="btn btn-yellow" style="width: 100%; margin-bottom: 1rem;">Pay Full Rent (Demo)</button>
+                        
+                        <div style="background: var(--bg-cream); padding: 1.5rem; border-radius: 8px; text-align: center; margin-bottom: 1rem;">
+                            <p style="font-weight: 600; font-size: 0.95rem; color: var(--text-heavy); margin-bottom: 0.5rem;">Split Rent Option</p>
+                            <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 1rem;">Pair with a roommate and share the cost.</p>
+                            <button id="btnPaySplitRent" class="btn btn-blue-outline" style="width: 100%; font-size: 0.9rem;">Pay Your Share</button>
+                        </div>
+
+                        <p style="font-size: 0.85rem; color: #9CA3AF; margin-top: 0.5rem; margin-bottom: 0; text-align: center;">Demo Payment, no real money involved</p>
+                    </div>
+                    <div id="paymentHeldState" style="display: none;">
+                        <p style="font-weight: 600; color: #F59E0B; margin-bottom: 1rem; font-size: 1.1rem; text-align: center;">Held in Escrow</p>
+                        <button id="btnConfirmMoveIn" class="btn btn-primary btn-dark" style="width: 100%;">Confirm Move-In</button>
+                        <p style="font-size: 0.85rem; color: #9CA3AF; margin-top: 0.5rem; margin-bottom: 0; text-align: center;">Demo Payment, no real money involved</p>
+                    </div>
+                    <div id="paymentReleasedState" style="display: none; text-align: center;">
+                        <p style="font-weight: 600; color: var(--verified-green); margin-bottom: 0; font-size: 1.1rem;">Released to Landlord</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Maintenance Report Section (Shows only if moved in) -->
+            <div id="maintenanceSection" style="display: none; margin-bottom: 3rem; text-align: center;">
+                <div class="bento-card" style="display: inline-block; padding: 2rem; width: 100%; max-width: 400px; margin: 0 auto; text-align: left;">
+                    <h3 style="margin-bottom: 1.5rem; text-align: center; color: #EF4444;">Report Damage</h3>
+                    <p style="font-size: 0.9rem; color: #6B7280; margin-bottom: 1rem; text-align: center;">Upload evidence of damage. Our AI will audit it before releasing maintenance funds.</p>
+                    <form id="maintenanceForm">
+                        <div class="form-group">
+                            <label>Issue Description</label>
+                            <textarea id="maintenanceDesc" placeholder="e.g. The pipe in the bathroom is leaking heavily..." required style="min-height: 80px;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Photo Evidence</label>
+                            <input type="file" id="maintenanceImage" accept="image/*" required style="padding: 10px;">
+                        </div>
+                        <button type="submit" class="btn btn-dark" id="btnSubmitMaintenance" style="width: 100%;">Submit AI Repair Audit</button>
+                        <p id="maintenanceStatus" style="font-size: 0.85rem; font-weight: 600; text-align: center; margin-top: 1rem; display: none;"></p>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Verification Evidence Section -->
+            <div id="verificationEvidenceSection" style="display: none; margin-bottom: 3rem;">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2>Verification Evidence</h2>
+                    <p>Transparent report of the physical inspection</p>
+                </div>
+                <div class="bento-card">
+                    <h3 style="margin-bottom: 1rem;">Inspector Photos</h3>
+                    <div id="evidencePhotos" style="display: flex; gap: 1rem; margin-bottom: 2rem; overflow-x: auto;"></div>
+                    
+                    <h3 style="margin-bottom: 1rem;">Gemma Verdict: <span id="evidenceVerdict" style="text-transform: uppercase;"></span></h3>
+                    <p id="evidenceReason" style="margin-bottom: 2rem; color: #4B5563; font-size: 1.1rem; line-height: 1.5;"></p>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div>
+                            <h4 style="color: var(--verified-green); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Confirmed Claims
+                            </h4>
+                            <ul id="evidenceMatched" style="color: var(--verified-green); padding-left: 1.5rem; line-height: 1.6;"></ul>
+                        </div>
+                        <div>
+                            <h4 style="color: #EF4444; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                Flagged Claims
+                            </h4>
+                            <ul id="evidenceMismatched" style="color: #EF4444; padding-left: 1.5rem; line-height: 1.6;"></ul>
+                        </div>
+                    </div>
+                </div>
+                <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 40px 0;">
+            </div>
+
+            <!-- Reviews Section -->
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <h2>Property Reviews</h2>
+                <p>Listen to what other students have to say</p>
+            </div>
+
+            <div class="bento-card" id="overall-summary-block" style="margin-bottom: 2rem;">
+                <h3>Overall Sentiment</h3>
+                <p id="overall-text" style="color: var(--text-heavy); font-weight: 500; font-size: 1.25rem;">Loading overall summary...</p>
+            </div>
+
+            <div class="bento-card" style="margin-bottom: 3rem;">
+                <h3>Leave a Review</h3>
+                <p>Type your review or use your voice to record it.</p>
+                <div class="star-rating">
+                    <input type="radio" id="star5" name="rating" value="5" /><label for="star5">★</label>
+                    <input type="radio" id="star4" name="rating" value="4" /><label for="star4">★</label>
+                    <input type="radio" id="star3" name="rating" value="3" /><label for="star3">★</label>
+                    <input type="radio" id="star2" name="rating" value="2" /><label for="star2">★</label>
+                    <input type="radio" id="star1" name="rating" value="1" /><label for="star1">★</label>
+                </div>
+                <div class="form-group">
+                    <textarea id="review-text" placeholder="I loved living here..." style="min-height: 120px; width: 100%;"></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <button class="btn-record" id="btn-record">🎤 Record Voice Note</button>
+                    <button class="btn btn-yellow" id="btn-submit">Submit Review</button>
+                </div>
+                <p id="record-status" style="margin-top: 1rem; font-weight: 600;"></p>
+            </div>
+
+            <div>
+                <h3 style="margin-bottom: 2rem;">Past Reviews</h3>
+                <div id="reviews-list" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div style="color: #6B7280;">Loading reviews...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/animations.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        if (!session.isAuthenticated() || session.getRole() !== 'student') {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try { await api.logout(); } catch (err) {}
+            session.clear();
+            window.location.href = 'index.html';
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const listingId = urlParams.get('listing_id');
+        
+        if (!listingId) {
+            alert('No listing specified!');
+            window.location.href = 'student-dashboard.html';
+        }
+
+        document.getElementById('btnTranslator').href = `contract.html?listing_id=${listingId}`;
+
+        // Load Listing Details
+        async function loadListingDetails() {
+            try {
+                const listing = await api.getListing(listingId);
+                if (!listing) throw new Error('Listing not found');
+                
+                document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('contentWrapper').style.display = 'block';
+                
+                document.getElementById('detailImage').src = `${API_BASE_URL}${listing.image_path}`;
+                document.getElementById('detailPrice').textContent = listing.price;
+                document.getElementById('detailAddress').textContent = listing.address;
+                document.getElementById('detailClaims').textContent = listing.landlord_claims;
+                
+                if (listing.status === 'verified') {
+                    loadVerificationReport();
+                    if (session.getRole() === 'student') {
+                        loadEscrowStatus();
+                    }
+                }
+
+                loadReviews();
+            } catch (err) {
+                document.getElementById('loadingMsg').textContent = 'Failed to load listing.';
+                document.getElementById('loadingMsg').style.color = 'red';
+                console.error(err);
+            }
+        }
+        
+        async function loadVerificationReport() {
+            try {
+                const data = await api.getVerificationReport(listingId);
+                if (data.success && data.report) {
+                    const r = data.report;
+                    document.getElementById('verificationEvidenceSection').style.display = 'block';
+                    
+                    document.getElementById('evidenceVerdict').textContent = r.gemma_verdict;
+                    document.getElementById('evidenceVerdict').style.color = r.gemma_verdict.toLowerCase() === 'approved' ? 'var(--verified-green)' : '#EF4444';
+                    
+                    document.getElementById('evidenceReason').textContent = r.gemma_reason;
+                    
+                    const photosContainer = document.getElementById('evidencePhotos');
+                    r.submitted_photos.forEach(photoPath => {
+                        const img = document.createElement('img');
+                        img.src = `${API_BASE_URL}${photoPath}`;
+                        img.style.height = '200px';
+                        img.style.borderRadius = '12px';
+                        img.style.objectFit = 'cover';
+                        photosContainer.appendChild(img);
+                    });
+
+                    const matchedContainer = document.getElementById('evidenceMatched');
+                    if (r.matched_claims.length === 0) matchedContainer.innerHTML = '<li>None</li>';
+                    r.matched_claims.forEach(c => {
+                        const li = document.createElement('li');
+                        li.textContent = c;
+                        matchedContainer.appendChild(li);
+                    });
+
+                    const mismatchedContainer = document.getElementById('evidenceMismatched');
+                    if (r.mismatched_claims.length === 0) mismatchedContainer.innerHTML = '<li style="color: #6B7280; list-style-type: none;">None found</li>';
+                    r.mismatched_claims.forEach(c => {
+                        const li = document.createElement('li');
+                        li.textContent = c;
+                        mismatchedContainer.appendChild(li);
+                    });
+                }
+            } catch(e) {
+                console.error("Could not load verification report", e);
+            }
+        }
+
+        let currentTransactionId = null;
+        async function loadEscrowStatus() {
+            try {
+                document.getElementById('paymentSection').style.display = 'block';
+                const data = await api.getEscrowForListing(listingId);
+                
+                document.getElementById('paymentUnpaidState').style.display = 'none';
+                document.getElementById('paymentHeldState').style.display = 'none';
+                document.getElementById('paymentReleasedState').style.display = 'none';
+                document.getElementById('maintenanceSection').style.display = 'none';
+
+                if (data && data.transaction) {
+                    currentTransactionId = data.transaction.id;
+                    if (data.transaction.status === 'held') {
+                        document.getElementById('paymentHeldState').style.display = 'block';
+                    } else if (data.transaction.status === 'released') {
+                        document.getElementById('paymentReleasedState').style.display = 'block';
+                        document.getElementById('maintenanceSection').style.display = 'block';
+                    }
+                } else {
+                    document.getElementById('paymentUnpaidState').style.display = 'block';
+                }
+            } catch(e) {
+                console.error("Error loading escrow status", e);
+            }
+        }
+
+        document.getElementById('btnPayRent')?.addEventListener('click', async () => {
+            try {
+                document.getElementById('btnPayRent').disabled = true;
+                document.getElementById('btnPayRent').innerText = 'Processing...';
+                await api.payEscrow(listingId, false);
+                await loadEscrowStatus();
+            } catch(e) {
+                alert(e.message);
+                document.getElementById('btnPayRent').disabled = false;
+                document.getElementById('btnPayRent').innerText = 'Pay Full Rent (Demo)';
+            }
+        });
+
+        document.getElementById('btnPaySplitRent')?.addEventListener('click', async () => {
+            try {
+                document.getElementById('btnPaySplitRent').disabled = true;
+                document.getElementById('btnPaySplitRent').innerText = 'Processing Share...';
+                await api.payEscrow(listingId, true);
+                await loadEscrowStatus();
+            } catch(e) {
+                alert(e.message);
+                document.getElementById('btnPaySplitRent').disabled = false;
+                document.getElementById('btnPaySplitRent').innerText = 'Pay Your Share';
+            }
+        });
+
+        document.getElementById('btnConfirmMoveIn')?.addEventListener('click', async () => {
+            if (!currentTransactionId) return;
+            try {
+                document.getElementById('btnConfirmMoveIn').disabled = true;
+                document.getElementById('btnConfirmMoveIn').innerText = 'Releasing...';
+                await api.confirmMoveIn(currentTransactionId);
+                await loadEscrowStatus();
+            } catch(e) {
+                alert(e.message);
+                document.getElementById('btnConfirmMoveIn').disabled = false;
+                document.getElementById('btnConfirmMoveIn').innerText = 'Confirm Move-In';
+            }
+        });
+
+        // Maintenance Logic
+        document.getElementById('maintenanceForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitMaintenance');
+            const statusMsg = document.getElementById('maintenanceStatus');
+            
+            btn.disabled = true;
+            btn.innerText = 'Uploading...';
+            statusMsg.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('description', document.getElementById('maintenanceDesc').value);
+            formData.append('image', document.getElementById('maintenanceImage').files[0]);
+
+            try {
+                await api.submitMaintenanceIssue(listingId, formData);
+                statusMsg.textContent = 'Report submitted for AI Audit successfully!';
+                statusMsg.style.color = 'var(--verified-green)';
+                statusMsg.style.display = 'block';
+                document.getElementById('maintenanceForm').reset();
+            } catch (err) {
+                statusMsg.textContent = 'Failed to submit report. Please try again.';
+                statusMsg.style.color = '#EF4444';
+                statusMsg.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Submit AI Repair Audit';
+            }
+        });
+        
+        // Reviews Logic
+        const overallText = document.getElementById('overall-text');
+        const reviewsList = document.getElementById('reviews-list');
+        const btnRecord = document.getElementById('btn-record');
+        const btnSubmit = document.getElementById('btn-submit');
+        const reviewTextArea = document.getElementById('review-text');
+        const recordStatus = document.getElementById('record-status');
+
+        let recognition;
+        let isRecording = false;
+
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onstart = function() {
+                isRecording = true;
+                btnRecord.classList.add('recording');
+                btnRecord.innerText = '⏹ Stop Recording';
+                recordStatus.innerText = 'Listening...';
+                recordStatus.style.color = '#F59E0B';
+            };
+
+            recognition.onresult = function(event) {
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    }
+                }
+                if (finalTranscript) {
+                    const currentVal = reviewTextArea.value;
+                    reviewTextArea.value = currentVal ? currentVal + ' ' + finalTranscript : finalTranscript;
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error', event.error);
+                recordStatus.innerText = 'Error recognizing speech: ' + event.error;
+                recordStatus.style.color = '#EF4444';
+                stopRecording();
+            };
+
+            recognition.onend = function() {
+                stopRecording();
+            };
+        } else {
+            btnRecord.style.display = 'none';
+            recordStatus.innerText = 'Voice recording not supported in this browser.';
+            recordStatus.style.color = '#EF4444';
+        }
+
+        function toggleRecording() {
+            if (!recognition) return;
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            btnRecord.classList.remove('recording');
+            btnRecord.innerText = '🎤 Record Voice Note';
+            if (recordStatus.innerText === 'Listening...') {
+                recordStatus.innerText = 'Recording stopped.';
+                recordStatus.style.color = '#6B7280';
+            }
+        }
+
+        btnRecord.addEventListener('click', toggleRecording);
+
+        async function loadReviews() {
+            try {
+                const data = await api.getReviews(listingId);
+                overallText.innerText = data.overall_summary;
+                
+                reviewsList.innerHTML = '';
+                if (!data.reviews || data.reviews.length === 0) {
+                    reviewsList.innerHTML = '<p style="color: #6B7280">No reviews yet.</p>';
+                    return;
+                }
+
+                data.reviews.forEach(review => {
+                    const card = document.createElement('div');
+                    card.className = 'bento-card';
+                    card.style.padding = '1.5rem';
+                    
+                    let sentimentClass = 'sentiment-neutral';
+                    if (review.sentiment && review.sentiment.toLowerCase() === 'positive') sentimentClass = 'sentiment-positive';
+                    if (review.sentiment && review.sentiment.toLowerCase() === 'negative') sentimentClass = 'sentiment-negative';
+
+                    let starsHtml = '';
+                    if (review.rating) {
+                        starsHtml = '<div class="static-stars">' + '★'.repeat(review.rating) + '<span style="color: #E5E7EB;">' + '★'.repeat(5 - review.rating) + '</span></div>';
+                    }
+
+                    card.innerHTML = `
+                        ${starsHtml}
+                        <span class="sentiment-badge ${sentimentClass}">${review.sentiment || 'neutral'}</span>
+                        <div class="review-summary">${review.gemma_summary || 'No summary available'}</div>
+                        <div class="review-text">"${review.transcribed_text}"</div>
+                        <span class="date-stamp">${new Date(review.timestamp).toLocaleDateString()}</span>
+                    `;
+                    reviewsList.appendChild(card);
+                });
+            } catch (e) {
+                overallText.innerText = 'Failed to load overall summary.';
+                reviewsList.innerHTML = '<p style="color: #EF4444">Failed to load reviews.</p>';
+                console.error(e);
+            }
+        }
+
+        btnSubmit.addEventListener('click', async () => {
+            const text = reviewTextArea.value.trim();
+            const ratingRadio = document.querySelector('input[name="rating"]:checked');
+            const rating = ratingRadio ? parseInt(ratingRadio.value) : null;
+            
+            if (!text) {
+                alert('Please enter a review or record a voice note.');
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            btnSubmit.innerText = 'Submitting...';
+
+            try {
+                await api.submitReview(listingId, text, rating);
+
+                reviewTextArea.value = '';
+                if (ratingRadio) ratingRadio.checked = false;
+                recordStatus.innerText = 'Review submitted successfully!';
+                recordStatus.style.color = 'var(--verified-green)';
+                setTimeout(() => recordStatus.innerText = '', 3000);
+                
+                loadReviews();
+            } catch (e) {
+                alert(e.message);
+                console.error(e);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = 'Submit Review';
+            }
+        });
+
+        loadListingDetails();
+    </script>
+</body>
+</html>

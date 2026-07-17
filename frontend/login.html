@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In | Hostra</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="container">
+        <a href="index.html" class="logo">Hostra</a>
+    </header>
+
+    <main class="container">
+        <div class="auth-container">
+            <h2>Welcome back</h2>
+            <p style="margin-bottom: 2rem;">Log in to access trusted housing listings.</p>
+            
+            <form id="loginForm" class="auth-form">
+                <div class="error-message" id="errorMessage">Invalid email or password.</div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" required placeholder="student@lautech.edu.ng">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                
+                <button type="submit" class="btn btn-yellow btn-submit" id="loginBtn">Log In</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (session.isAuthenticated()) {
+            const role = session.getRole();
+            window.location.href = role === 'landlord' ? 'landlord-dashboard.html' : 'student-dashboard.html';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+            const errorMsg = document.getElementById('errorMessage');
+
+            btn.textContent = 'Logging in...';
+            btn.disabled = true;
+            errorMsg.style.display = 'none';
+
+            try {
+                const data = await api.login(email, password);
+                if (data.success) {
+                    session.set(data.token, data.email, data.role, data.name);
+                    window.location.href = data.role === 'landlord' ? 'landlord-dashboard.html' : 'student-dashboard.html';
+                }
+            } catch (err) {
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = 'Invalid email or password.';
+            } finally {
+                btn.textContent = 'Log In';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
