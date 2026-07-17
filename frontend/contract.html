@@ -3,312 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agreement Translator | Hostra</title>
+    <title>Hostra - AI Agreement Translator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        .translator-container {
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        .upload-card {
-            background: var(--card-surface);
-            border-radius: 16px;
-            padding: 3rem 2rem;
-            box-shadow: var(--shadow-bento);
-            border: 1px solid #E5E7EB;
-            text-align: center;
-        }
-
-        .upload-card h2 {
-            margin-top: 0;
-            color: var(--text-dark);
-        }
-
-        .upload-card p {
-            color: #6B7280;
-            margin-bottom: 2rem;
-        }
-
-        .drop-zone {
-            border: 2px dashed #CBD5E1;
-            border-radius: 12px;
-            padding: 3rem 2rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background-color: #F8FAFC;
-        }
-
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--primary);
-            background-color: #F1F5F9;
-        }
-
-        .drop-zone-text {
-            color: #475569;
-            font-weight: 500;
-        }
-
-        #file-input {
-            display: none;
-        }
-
-        .results-card {
-            background: var(--card-surface);
-            border-radius: 16px;
-            padding: 2.5rem;
-            box-shadow: var(--shadow-bento);
-            border: 1px solid #E5E7EB;
-            display: none;
-        }
-
-        .results-card h3 {
-            margin-top: 0;
-            color: var(--text-dark);
-            margin-bottom: 1.5rem;
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.5rem;
-        }
-
-        .clause-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .clause-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            padding: 1rem;
-            background-color: #FFFBEB;
-            border: 1px solid #FDE68A;
-            border-radius: 8px;
-            color: #92400E;
-        }
-
-        .clause-icon {
-            flex-shrink: 0;
-            font-size: 1.25rem;
-        }
-
-        .loading-state {
-            display: none;
-            text-align: center;
-            padding: 3rem;
-        }
-
-        .doc-scanner {
-            position: relative;
-            width: 48px;
-            height: 64px;
-            border: 3px solid #CBD5E1;
-            border-radius: 6px;
-            margin: 0 auto 1.5rem auto;
-            background: #F8FAFC;
-            overflow: hidden;
-        }
-        .doc-scanner::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 4px;
-            background: var(--campus-blue);
-            box-shadow: 0 0 8px var(--campus-blue);
-            animation: scanLine 1.5s linear infinite;
-        }
-        @keyframes scanLine {
-            0% { transform: translateY(-4px); }
-            100% { transform: translateY(64px); }
-        }
-
-        .error-message {
-            display: none;
-            color: #B91C1C;
-            background-color: #FEF2F2;
-            padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid #FECACA;
-            margin-top: 1rem;
-            text-align: left;
-        }
-    </style>
 </head>
-<body>
-    <header class="dashboard-header">
-        <div class="container">
-            <a href="index.html" class="logo">Hostra</a>
-            <div class="header-actions">
-                <a href="student-dashboard.html" class="btn-text">Dashboard</a>
-            </div>
+<body style="background-color: var(--bg-light); font-family: 'Outfit', sans-serif;">
+    <div class="dashboard-container" style="max-width: 800px; margin: 40px auto; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2>AI Lease Agreement Translator</h2>
+            <a href="student-dashboard.html" class="btn btn-text">← Back to Dashboard</a>
         </div>
-    </header>
 
-    <main class="translator-container">
-        <div class="upload-card">
-            <h2>Agreement Translator</h2>
-            <p>Upload your tenancy agreement and we'll flag anything unusual in plain English before you sign.</p>
+        <div class="card" style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 0.5rem;">Upload Rental Contract</h3>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Upload your lease document or agreement photo. Gemma will scan it for hidden landlord traps and unfair clauses.</p>
             
-            <div class="drop-zone" id="drop-zone">
-                <div class="drop-zone-text">Drag & drop your agreement photo here<br><br>or click to browse files</div>
-                <input type="file" id="file-input" accept="image/*">
+            <div id="contractForm">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <input type="file" id="contractFile" accept="image/*,application/pdf" style="padding: 10px; width: 100%; border: 1px dashed var(--border-color); border-radius: 8px;">
+                </div>
+                <button type="button" class="btn btn-yellow" id="translateBtn" onclick="handleContractTranslate()" style="width: 100%; padding: 12px;">Scan & Translate Contract</button>
             </div>
-
-            <div class="loading-state" id="loading-state">
-                <div class="doc-scanner"></div>
-                <div style="color: #6B7280; font-weight: 500;">Reading your agreement... This might take a few seconds.</div>
+            
+            <div id="loadingMsg" style="display: none; text-align: center; margin-top: 1.5rem; font-weight: 600; color: var(--primary-color);">
+                Gemma is analyzing legal clauses... Please wait.
             </div>
-
-            <div class="error-message" id="error-message"></div>
         </div>
 
-        <div class="results-card" id="results-card">
-            <h3>Flags to Review</h3>
-            <ul class="clause-list" id="clause-list">
-                <!-- Clauses injected here -->
-            </ul>
-        </div>
-    </main>
+        <!-- Results Section -->
+        <div id="resultsContainer" style="display: none;">
+            <!-- Summary Card -->
+            <div class="card" style="background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">Plain English Summary</h4>
+                <p id="summaryText" style="line-height: 1.6; color: var(--text-dark);"></p>
+            </div>
 
-    <script src="js/animations.js"></script>
+            <!-- Red Flags Card -->
+            <div class="card" style="background: #fff5f5; border: 1px solid #feb2b2; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <h4 style="color: #c53030; margin-bottom: 0.5rem;">🚩 Hidden Traps & Red Flags</h4>
+                <ul id="redFlagsList" style="padding-left: 20px; line-height: 1.6; color: #742a2a;"></ul>
+            </div>
+
+            <!-- Fair Clauses Card -->
+            <div class="card" style="background: #f0fff4; border: 1px solid #9ae6b4; padding: 1.5rem; border-radius: 12px;">
+                <h4 style="color: #276749; margin-bottom: 0.5rem;">✅ Fair & Standard Clauses</h4>
+                <ul id="fairClausesList" style="padding-left: 20px; line-height: 1.6; color: #22543d;"></ul>
+            </div>
+        </div>
+    </div>
+
     <script src="js/api.js"></script>
     <script>
-        // Protect route
-        if (!session.isAuthenticated() || session.getRole() !== 'student') {
+        if (!session.isAuthenticated()) {
             window.location.href = 'login.html';
         }
 
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('file-input');
-        const loadingState = document.getElementById('loading-state');
-        const resultsCard = document.getElementById('results-card');
-        const clauseList = document.getElementById('clause-list');
-        const errorMessage = document.getElementById('error-message');
+        async function handleContractTranslate() {
+            const fileInput = document.getElementById('contractFile');
+            const btn = document.getElementById('translateBtn');
+            const loading = document.getElementById('loadingMsg');
+            const results = document.getElementById('resultsContainer');
 
-        // Drag and drop handlers
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.add('dragover');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.remove('dragover');
-            }, false);
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            let dt = e.dataTransfer;
-            let files = dt.files;
-            handleFiles(files);
-        });
-
-        dropZone.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', function() {
-            handleFiles(this.files);
-        });
-
-        async function handleFiles(files) {
-            if (files.length === 0) return;
-            
-            const file = files[0];
-            if (!file.type.startsWith('image/')) {
-                showError("Please upload an image file.");
+            if (fileInput.files.length === 0) {
+                alert('Please select a lease document first.');
                 return;
             }
 
-            uploadFile(file);
-        }
-
-        async function uploadFile(file) {
-            // Reset UI
-            dropZone.style.display = 'none';
-            loadingState.style.display = 'block';
-            resultsCard.style.display = 'none';
-            errorMessage.style.display = 'none';
-            clauseList.innerHTML = '';
-
             const formData = new FormData();
-            formData.append('image', file);
+            formData.append('file', fileInput.files[0]);
+
+            btn.disabled = true;
+            btn.textContent = 'Analyzing...';
+            loading.style.display = 'block';
+            results.style.display = 'none';
 
             try {
-                const response = await fetch(`${API_BASE_URL}/contract/translate`, {
-                    method: 'POST',
-                    headers: authHeader(),
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.detail || "Upload failed");
-                }
-
-                const data = await response.json();
-                
-                loadingState.style.display = 'none';
-
-                if (data.raw_result && data.raw_result.verdict === 'error') {
-                    showError("Couldn't read that document clearly, try a clearer photo.");
-                    dropZone.style.display = 'block';
-                    return;
-                }
-
-                if (data.clauses && data.clauses.length > 0) {
-                    data.clauses.forEach(clause => {
+                const response = await api.translateContract(formData); // Ensure api.js has translateContract wrapper
+                if (response.success) {
+                    const data = response.analysis;
+                    
+                    document.getElementById('summaryText').textContent = data.summary;
+                    
+                    const redList = document.getElementById('redFlagsList');
+                    redList.innerHTML = '';
+                    (data.red_flags || []).forEach(flag => {
                         const li = document.createElement('li');
-                        li.className = 'clause-item';
-                        li.innerHTML = `
-                            <div class="clause-icon">⚠️</div>
-                            <div>${clause}</div>
-                        `;
-                        clauseList.appendChild(li);
+                        li.textContent = flag;
+                        redList.appendChild(li);
                     });
-                } else {
-                    const li = document.createElement('li');
-                    li.className = 'clause-item';
-                    li.style.backgroundColor = '#F0FDF4';
-                    li.style.borderColor = '#BBF7D0';
-                    li.style.color = '#166534';
-                    li.innerHTML = `
-                        <div class="clause-icon">✅</div>
-                        <div>No unusual or risky terms were found in this document segment. Read it carefully regardless!</div>
-                    `;
-                    clauseList.appendChild(li);
+
+                    const fairList = document.getElementById('fairClausesList');
+                    fairList.innerHTML = '';
+                    (data.fair_clauses || []).forEach(clause => {
+                        const li = document.createElement('li');
+                        li.textContent = clause;
+                        fairList.appendChild(li);
+                    });
+
+                    results.style.display = 'block';
                 }
-                
-                resultsCard.style.display = 'block';
-                dropZone.style.display = 'block'; // Allow them to upload another
-
             } catch (err) {
-                loadingState.style.display = 'none';
-                dropZone.style.display = 'block';
-                showError(err.message || "An unexpected error occurred.");
+                alert('Failed to analyze document. Please try a clearer scan or image.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Scan & Translate Contract';
+                loading.style.display = 'none';
             }
-        }
-
-        function showError(msg) {
-            errorMessage.textContent = msg;
-            errorMessage.style.display = 'block';
         }
     </script>
 </body>

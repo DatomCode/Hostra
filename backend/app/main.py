@@ -15,8 +15,9 @@ from google import genai
 from google.genai import types
 from PIL import Image
 
-from .database import get_db, User, Listing, VerificationReport, Transaction, SplitInvite, Notification, SessionLocal
+import re
 
+from .database import get_db, User, Listing, VerificationReport, Transaction, SplitInvite, Notification, Review, MaintenanceReport, SessionLocal
 load_dotenv()
 try:
     client = genai.Client()
@@ -26,6 +27,10 @@ except Exception as e:
 MODEL_ID = "gemma-4-31b-it" 
 
 os.makedirs("uploads", exist_ok=True)
+
+
+
+
 
 # --- Lifespan Event: Auto-Seeding with Balanced Landlord Splits ---
 @asynccontextmanager
@@ -72,6 +77,34 @@ app.add_middleware(
 )
 
 security = HTTPBearer()
+
+def parse_price(price_val) -> float:
+    """
+    Safely converts any price format (string or number) into a clean float.
+    Handles: "₦150,000", "150,000", "150k", "1.5m", or raw integers/floats.
+    """
+    if price_val is None:
+        return 0.0
+    if isinstance(price_val, (int, float)):
+        return float(price_val)
+        
+    # Convert to string and clean spaces/currency symbols
+    cleaned = str(price_val).lower().replace("₦", "").replace(",", "").strip()
+    
+    # Handle shorthand multipliers like 'k' (thousand) or 'm' (million)
+    multiplier = 1.0
+    if 'k' in cleaned:
+        multiplier = 1000.0
+        cleaned = cleaned.replace('k', '')
+    elif 'm' in cleaned:
+        multiplier = 1000000.0
+        cleaned = cleaned.replace('m', '')
+        
+    # Extract only the numeric digits and decimal points
+    match = re.search(r"[-+]?\d*\.\d+|\d+", cleaned)
+    if match:
+        return float(match.group()) * multiplier
+    return 0.0
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     token = credentials.credentials
@@ -232,27 +265,39 @@ def get_report(listing_id: int, db: Session = Depends(get_db)):
         "mismatched_claims": json.loads(report.mismatched_claims)
     }}
 
-@app.post("/contract/translate")
-def translate_contract(image: UploadFile = File(...), user: User = Depends(get_current_user)):
+# --- THE AGREEMENT TRANSLATOR (LEASE AUDIT) ---
+@app.post("/translate-contract")
+def translate_contract(file: UploadFile = File(...), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        image_data = Image.open(image.file)
-        prompt = """You are an expert campus tenancy lawyer. Analyze this image of a rental contract. 
-        Look specifically for hidden fees, strict curfews, utility traps, or unfair maintenance rules. 
-        Translate these legal clauses into short, brutally honest, plain English bullet points for a student. 
-        If everything looks standard, return an empty list. 
-        Respond in JSON format with a single key 'clauses' which contains a list of strings."""
+        os.makedirs("uploads", exist_ok=True)
+        file_path = f"uploads/{file.filename}"
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Upload using the Files API for native document/multimodal understanding
+        uploaded_file = client.files.upload(file=file_path)
         
+        prompt = """You are an expert student legal aid advisor in Nigeria. Read this rental lease agreement document carefully. 
+        Analyze it and return a JSON object with exactly these keys:
+        'summary': A plain English 2-sentence summary of the lease terms,
+        'red_flags': A list of strings pointing out any suspicious, unfair, unlawful, or restrictive clauses,
+        'fair_clauses': A list of strings highlighting standard or favorable conditions."""
+
         response = client.models.generate_content(
             model=MODEL_ID,
-            contents=[image_data, prompt],
+            contents=[uploaded_file, prompt],
             config=types.GenerateContentConfig(response_mime_type="application/json")
         )
         
         raw_text = response.text.strip().replace("```json", "").replace("```", "").strip()
         ai_data = json.loads(raw_text)
-        return {"success": True, "clauses": ai_data.get("clauses", [])}
+        
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            
+        return {"success": True, "analysis": ai_data}
     except Exception as e:
-        return {"raw_result": {"verdict": "error", "detail": str(e)}}
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/wallet/me")
 def get_wallet(user: User = Depends(get_current_user)):
@@ -285,33 +330,53 @@ def pay_escrow(req: EscrowPayRequest, user: User = Depends(get_current_user), db
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
     
-    existing_tx = db.query(Transaction).filter(
-        Transaction.listing_id == req.listing_id, 
-        Transaction.tenant_id == user.id
-    ).first()
+    # Safely parse the price string into a clean float for calculation
+    numeric_price = parse_price(listing.price)
     
-    if existing_tx:
-        return {"success": True, "message": "Already paid into escrow", "transaction": {"id": existing_tx.id, "status": existing_tx.status}}
+    amount_to_pay = (numeric_price / 2.0) if req.is_split else numeric_price
     
-    tx = Transaction(
-        listing_id=listing.id, 
-        tenant_id=user.id, 
-        landlord_id=listing.landlord_id, 
-        is_split=req.is_split,
-        status="held"
-    )
-    db.add(tx)
-    
-    try:
-        clean_price = float(listing.price.replace('₦', '').replace(',', ''))
-        share_amt = f"₦{clean_price / 2:,.0f}" if req.is_split else f"₦{clean_price:,.0f}"
-    except:
-        share_amt = listing.price
+    if user.wallet_balance < amount_to_pay:
+        raise HTTPException(status_code=400, detail="Insufficient wallet balance")
         
-    db.add(Notification(user_id=listing.landlord_id, message=f"🔔 Student {user.name} has deposited {share_amt} into escrow for {listing.address}."))
+    user.wallet_balance -= amount_to_pay
+    
+    transaction = Transaction(
+        listing_id=listing.id,
+        tenant_id=user.id,
+        landlord_id=listing.landlord_id,
+        status="held",
+        is_split=req.is_split
+    )
+    db.add(transaction)
     db.commit()
-    db.refresh(tx)
-    return {"success": True, "transaction": {"id": tx.id, "status": tx.status}}
+    return {"success": True, "message": "Payment locked in escrow successfully"}
+
+@app.post("/escrow/split-invite")
+def send_split_invite(req: SplitInviteRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    listing = db.query(Listing).filter(Listing.id == req.listing_id).first()
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+        
+    # Safely calculate split share using the helper
+    total_price = parse_price(listing.price)
+    split_share = total_price / 2.0
+    
+    invite = SplitInvite(
+        sender_id=user.id,
+        receiver_id=req.roommate_id,
+        listing_id=req.listing_id,
+        status="pending"
+    )
+    db.add(invite)
+    
+    # Send notification with the correctly formatted numerical split share
+    db.add(Notification(
+        user_id=req.roommate_id, 
+        message=f"{user.name} invited you to split rent for {listing.address}. Your share is ₦{split_share:,.2f}"
+    ))
+    
+    db.commit()
+    return {"success": True, "split_amount": split_share}
 
 @app.get("/escrow/listing/{listing_id}")
 def check_escrow(listing_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -452,34 +517,72 @@ def cancel_invite(invite_id: int, db: Session = Depends(get_db)):
         db.commit()
     return {"success": True}
 
-# --- Reviews & Sentiment Analysis ---
+            
+# --- Real Reviews & Sentiment Analysis ---
 class ReviewRequest(BaseModel):
     transcribed_text: str
-    rating: int = None
+    rating: Optional[int] = None
             
 @app.post("/reviews/{listing_id}")
-def submit_review(listing_id: int, req: ReviewRequest):
-    return {"success": True}
-
-@app.get("/reviews/{listing_id}")
-def get_reviews(listing_id: int):
-    prompt = f"Analyze this fake student review for a hackathon: 'I loved living here, but the landlord locks the gate at 8PM sharp.' Return a JSON object with 'sentiment' (positive, negative, neutral) and 'gemma_summary' (a 3 to 5 word summary)."
+def submit_review(listing_id: int, req: ReviewRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    # Use Gemma to analyze sentiment and generate summary
+    prompt = f"Analyze this student review: '{req.transcribed_text}'. Return a JSON object with 'sentiment' (must be exactly 'positive', 'negative', or 'neutral') and 'gemma_summary' (a concise 3 to 5 word summary)."
     try:
         response = client.models.generate_content(
             model=MODEL_ID,
             contents=[prompt],
             config=types.GenerateContentConfig(response_mime_type="application/json")
         )
-        
         raw_text = response.text.strip().replace("```json", "").replace("```", "").strip()
         ai_data = json.loads(raw_text)
-        
-        return {
-            "overall_summary": "Good location, strict rules.",
-            "reviews": [{"sentiment": ai_data.get('sentiment', 'neutral'), "rating": 4, "transcribed_text": "I loved living here, but the landlord locks the gate at 8PM sharp.", "gemma_summary": ai_data.get('gemma_summary'), "timestamp": "2026-07-10"}]
-        }
-    except:
-        return {"overall_summary": "Summary unavailable", "reviews": []}
+        sentiment = ai_data.get('sentiment', 'neutral')
+        gemma_summary = ai_data.get('gemma_summary', 'Student review')
+    except Exception:
+        sentiment = 'neutral'
+        gemma_summary = 'Student review'
+
+    new_review = Review(
+        listing_id=listing_id,
+        user_id=user.id,
+        transcribed_text=req.transcribed_text,
+        sentiment=sentiment,
+        gemma_summary=gemma_summary,
+        rating=req.rating
+    )
+    db.add(new_review)
+    db.commit()
+    return {"success": True}
+
+@app.get("/reviews/{listing_id}")
+def get_reviews(listing_id: int, db: Session = Depends(get_db)):
+    reviews = db.query(Review).filter(Review.listing_id == listing_id).all()
+    
+    if not reviews:
+        return {"overall_summary": "No reviews yet for this property.", "reviews": []}
+    
+    # Compute overall summary text
+    sentiments = [r.sentiment for r in reviews]
+    pos_count = sentiments.count('positive')
+    overall = "Mostly positive student feedback." if pos_count >= len(sentiments) / 2 else "Mixed student feedback."
+
+    formatted_reviews = [{
+        "sentiment": r.sentiment,
+        "rating": r.rating,
+        "transcribed_text": r.transcribed_text,
+        "gemma_summary": r.gemma_summary,
+        "timestamp": r.timestamp.strftime("%Y-%m-%d") if r.timestamp else "Recent"
+    } for r in reviews]
+
+    return {
+        "overall_summary": overall,
+        "reviews": formatted_reviews
+    }
+
+
 
 # --- Roommate Profiling & Matching ---
 @app.post("/roommate/profile")
@@ -495,26 +598,52 @@ def submit_roommate_profile(body: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Gemma reasoning failed")
 
-@app.get("/roommate/matches")
+# --- ROOMMATE MATCHING ENGINE ---
+@app.get("/roommates/matches")
 def get_roommate_matches(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Query other student profiles excluding the current user
     other_students = db.query(User).filter(User.role == "student", User.id != user.id).all()
+    
     matches = []
-    for s in other_students:
+    for peer in other_students:
+        # Calculate compatibility based on shared area preferences
+        score = 90 if peer.area and user.area and peer.area.lower() == user.area.lower() else 75
+        
         matches.append({
-            "id": s.id, "name": s.name, "score": 3, 
-            "reason": "Both prefer quiet environments.",
-            "summary": f"{s.name} matches your student lifestyle.",
-            "traits": {"sleep_schedule": "Night Owl", "noise_tolerance": "Low", "cleanliness": "High"}
+            "id": peer.id,
+            "name": peer.name,
+            "area": peer.area or "Ogbomoso Central",
+            "compatibility_score": f"{score}% Match",
+            "lifestyle": "Focused student, quiet habits, verified profile"
         })
+        
     return {"matches": matches}
 
-# --- AI Repair Audit & Maintenance ---
+# --- Real AI Repair Audit & Maintenance ---
 @app.post("/listings/{listing_id}/maintenance")
-def submit_maintenance(listing_id: int, description: str = Form(...), image: UploadFile = File(...)):
+def submit_maintenance(listing_id: int, description: str = Form(...), image: UploadFile = File(...), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    file_path = f"uploads/maintenance_{image.filename}"
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+        
+    report = MaintenanceReport(
+        listing_id=listing_id,
+        tenant_id=user.id,
+        description=description,
+        image_path=f"/{file_path}",
+        status="pending"
+    )
+    db.add(report)
+    
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    if listing:
+        db.add(Notification(user_id=listing.landlord_id, message=f"⚠️ Maintenance reported for {listing.address}: {description}"))
+        
+    db.commit()
     return {"success": True}
 
 @app.post("/listings/{listing_id}/repair-audit")
-def repair_audit(listing_id: int, image: UploadFile = File(...)):
+def repair_audit(listing_id: int, image: UploadFile = File(...), db: Session = Depends(get_db)):
     try:
         image_data = Image.open(image.file)
         prompt = """Look at this image of a plumbing or house repair. Has the issue been fixed, or does it look broken/dirty? 
@@ -531,6 +660,13 @@ def repair_audit(listing_id: int, image: UploadFile = File(...)):
         
         if ai_data.get('verdict') != 'approved':
             raise HTTPException(status_code=400, detail=ai_data.get('reason'))
+            
+        # Update maintenance report status if exists
+        report = db.query(MaintenanceReport).filter(MaintenanceReport.listing_id == listing_id, MaintenanceReport.status == "pending").first()
+        if report:
+            report.status = "resolved"
+            db.commit()
+            
         return {"success": True, "verdict": "approved"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail="AI Vision processing failed")
+        raise HTTPException(status_code=500, detail=str(e))
