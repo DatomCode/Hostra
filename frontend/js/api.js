@@ -209,6 +209,8 @@ const api = {
         } catch (error) { handleAuthError(error); throw error; }
     },
 
+    // REPLACE everything from payEscrow downwards with this:
+
     async payEscrow(listingId, split = false) {
         try {
             const response = await fetch(`${API_BASE_URL}/escrow/pay`, {
@@ -237,26 +239,27 @@ const api = {
             const response = await fetch(`${API_BASE_URL}/escrow/listing/${listingId}`, {
                 headers: { ...authHeader() }
             });
-            if (!response.ok) return { success: true, transaction: null };
+            if (!response.ok) return { success: true, status: "unpaid" };
             return await response.json();
-        } catch (error) { return { success: true, transaction: null }; }
+        } catch (error) { return { success: true, status: "unpaid" }; }
     },
 
-    async sendSplitRentInvitation(roommateId, listingId) {
+    // NEW ROOMMATE ROUTES
+    async sendRoommateRequest(roommateId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/escrow/split-invite`, {
+            const response = await fetch(`${API_BASE_URL}/roommate/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...authHeader() },
-                body: JSON.stringify({ roommate_id: roommateId, listing_id: listingId })
+                body: JSON.stringify({ roommate_id: roommateId })
             });
             if (!response.ok) throw new Error('Failed to send invite');
             return await response.json();
         } catch (error) { handleAuthError(error); throw error; }
     },
 
-    async getPendingInvites() {
+    async getRoommateRequests() {
         try {
-            const response = await fetch(`${API_BASE_URL}/escrow/invites`, {
+            const response = await fetch(`${API_BASE_URL}/roommate/requests`, {
                 headers: { ...authHeader() }
             });
             if (!response.ok) throw new Error('Failed to fetch invites');
@@ -264,9 +267,9 @@ const api = {
         } catch (error) { handleAuthError(error); throw error; }
     },
 
-    async answerInvite(inviteId, action) {
+    async answerRoommateRequest(inviteId, action) {
         try {
-            const response = await fetch(`${API_BASE_URL}/escrow/invites/${inviteId}/answer`, {
+            const response = await fetch(`${API_BASE_URL}/roommate/requests/${inviteId}/answer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...authHeader() },
                 body: JSON.stringify({ action: action })
@@ -276,41 +279,9 @@ const api = {
         } catch (error) { handleAuthError(error); throw error; }
     },
 
-    async cancelInvite(inviteId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/escrow/invites/${inviteId}/cancel`, {
-                method: 'POST',
-                headers: { ...authHeader() }
-            });
-            if (!response.ok) throw new Error('Failed to cancel invite');
-            return await response.json();
-        } catch (error) { handleAuthError(error); throw error; }
-    },
-
-    async submitMaintenanceIssue(listingId, formData) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/listings/${listingId}/maintenance`, {
-                method: 'POST',
-                headers: { ...authHeader() },
-                body: formData
-            });
-            if (!response.ok) throw new Error('Failed to submit maintenance issue');
-            return await response.json();
-        } catch (error) { handleAuthError(error); throw error; }
-    },
-
-    async submitRepairAudit(listingId, formData) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/listings/${listingId}/repair-audit`, {
-                method: 'POST',
-                headers: { ...authHeader() },
-                body: formData
-            });
-            if (!response.ok) throw new Error('Repair audit failed');
-            return await response.json();
-        } catch (error) { handleAuthError(error); throw error; }
-    },
-
+    // Utilities
+    async submitMaintenanceIssue(listingId, formData) { /* ... keep as is ... */ },
+    async submitRepairAudit(listingId, formData) { /* ... keep as is ... */ },
     async getNotifications() {
         try {
             const response = await fetch(`${API_BASE_URL}/notifications`, {
@@ -322,6 +293,16 @@ const api = {
     }
 };
 
+        // Helper function for the dynamic buttons we just created
+        window.executePayment = async function(isSplit) {
+            try {
+                alert("Processing Payment...");
+                await api.payEscrow(listingId, isSplit);
+                await loadEscrowStatus();
+            } catch(e) {
+                alert(e.message);
+            }
+        };
 const session = {
     set(token, email, role, name, area) {
         localStorage.setItem('hostra_token', token);

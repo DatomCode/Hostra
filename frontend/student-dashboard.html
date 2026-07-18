@@ -178,29 +178,28 @@
         // Load Invites for Split Rent
         async function loadInvites() {
             try {
-                const data = await api.getPendingInvites();
+                // Call the new API
+                const data = await api.getRoommateRequests();
                 const container = document.getElementById('invitesContainer');
                 const inbox = document.getElementById('inboxList');
                 const outbox = document.getElementById('outboxList');
                 
-                inbox.innerHTML = '';
-                outbox.innerHTML = '';
-
+                inbox.innerHTML = ''; outbox.innerHTML = '';
                 let hasInvites = false;
 
                 if (data.received && data.received.length > 0) {
                     hasInvites = true;
+                    document.querySelector('#invitesContainer h3').innerText = "Roommate Requests";
                     data.received.forEach(inv => {
                         const box = document.createElement('div');
                         box.className = 'invite-box';
                         box.innerHTML = `
                             <div>
-                                <strong>${inv.sender_name}</strong> invited you to split rent for <strong>${inv.property_address}</strong>!<br>
-                                <span style="color: #166534; font-size: 0.9rem;">Your half: ₦${inv.split_amount}</span>
+                                <strong>${inv.sender_name}</strong> wants to be your roommate!
                             </div>
                             <div style="display: flex; gap: 0.5rem;">
                                 <button class="btn btn-blue-outline" style="padding: 0.5rem 1rem; color: #EF4444; border-color: #EF4444;" onclick="handleInvite(${inv.id}, 'decline')">Decline</button>
-                                <button class="btn btn-yellow" style="padding: 0.5rem 1rem; background: var(--verified-green);" onclick="handleInvite(${inv.id}, 'accept', ${inv.listing_id})">Accept & Pay</button>
+                                <button class="btn btn-yellow" style="padding: 0.5rem 1rem; background: var(--verified-green);" onclick="handleInvite(${inv.id}, 'accept')">Accept</button>
                             </div>
                         `;
                         inbox.appendChild(box);
@@ -212,34 +211,31 @@
                     data.sent.forEach(inv => {
                         const box = document.createElement('div');
                         box.className = 'invite-box outbox';
-                        box.innerHTML = `
-                            <div>
-                                ⏳ Waiting for <strong>${inv.receiver_name}</strong> to accept your invite for <strong>${inv.property_address}</strong>.
-                            </div>
-                            <button class="btn btn-blue-outline" style="padding: 0.5rem 1rem; color: #EF4444; border-color: #EF4444;" onclick="cancelInvite(${inv.id})">Cancel Invite</button>
-                        `;
+                        box.innerHTML = `<div>⏳ Waiting for <strong>${inv.receiver_name}</strong> to accept your roommate request.</div>`;
                         outbox.appendChild(box);
                     });
                 }
-
-                if (hasInvites) container.style.display = 'block';
-                else container.style.display = 'none';
-
-            } catch (err) {
-                console.error("Could not load invites", err);
-            }
+                container.style.display = hasInvites ? 'block' : 'none';
+            } catch (err) { console.error("Could not load requests", err); }
         }
 
-        window.handleInvite = async function(inviteId, action, listingId = null) {
+        window.handleInvite = async function(inviteId, action) {
             try {
-                await api.answerInvite(inviteId, action);
-                if (action === 'accept') {
-                    window.location.href = `listing-detail.html?listing_id=${listingId}`;
-                } else {
-                    loadInvites(); // reload UI
-                }
-            } catch (e) { alert("Failed to process invite."); }
+                await api.answerRoommateRequest(inviteId, action);
+                loadInvites(); // Just reload the UI, no need to redirect to a house!
+            } catch (e) { alert("Failed to process."); }
         };
+
+        // window.handleInvite = async function(inviteId, action, listingId = null) {
+        //     try {
+        //         await api.answerInvite(inviteId, action);
+        //         if (action === 'accept') {
+        //             window.location.href = `listing-detail.html?listing_id=${listingId}`;
+        //         } else {
+        //             loadInvites(); // reload UI
+        //         }
+        //     } catch (e) { alert("Failed to process invite."); }
+        // };
 
         window.cancelInvite = async function(inviteId) {
             try {

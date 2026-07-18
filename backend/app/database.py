@@ -1,90 +1,10 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, Text, ForeignKey
-from sqlalchemy.orm import declarative_base, sessionmaker
-
-SQLALCHEMY_DATABASE_URL = "sqlite:///./hostra.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    password = Column(String)
-    name = Column(String)
-    role = Column(String) 
-    area = Column(String, nullable=True)
-    wallet_balance = Column(Float, default=0.0)
-    is_id_verified = Column(Boolean, default=False)
-    
-class Listing(Base):
-    __tablename__ = "listings"
-    id = Column(Integer, primary_key=True, index=True)
-    landlord_id = Column(Integer, ForeignKey("users.id"))
-    address = Column(String)
-    area = Column(String)
-    price = Column(String)
-    landlord_claims = Column(String)
-    image_path = Column(String)
-    status = Column(String, default="pending") 
-    
-class VerificationReport(Base):
-    __tablename__ = "verification_reports"
-    id = Column(Integer, primary_key=True, index=True)
-    listing_id = Column(Integer, ForeignKey("listings.id"))
-    verifier_id = Column(Integer, ForeignKey("users.id"))
-    gemma_verdict = Column(String)
-    gemma_reason = Column(Text)
-    submitted_photos = Column(String) 
-    matched_claims = Column(String) 
-    mismatched_claims = Column(String) 
-    
-class Transaction(Base):
-    __tablename__ = "transactions"
-    id = Column(Integer, primary_key=True, index=True)
-    listing_id = Column(Integer, ForeignKey("listings.id"))
-    tenant_id = Column(Integer, ForeignKey("users.id"))
-    landlord_id = Column(Integer, ForeignKey("users.id"))
-    status = Column(String, default="held") # held, released
-    is_split = Column(Boolean, default=False)
-
-class SplitInvite(Base):
-    __tablename__ = "split_invites"
-    id = Column(Integer, primary_key=True, index=True)
-    sender_id = Column(Integer, ForeignKey("users.id"))
-    receiver_id = Column(Integer, ForeignKey("users.id"))
-    listing_id = Column(Integer, ForeignKey("listings.id"))
-    status = Column(String, default="pending") # pending, accepted, declined
-
-# Add this model to your existing database.py
-class Notification(Base):
-    __tablename__ = "notifications"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    message = Column(String)
-    is_read = Column(Boolean, default=False)
-
-Base.metadata.create_all(bind=engine)
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, Text, ForeignKey, DateTime
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 import datetime
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./hostra.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -94,11 +14,14 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     password = Column(String)
     name = Column(String)
-    role = Column(String) 
+    role = Column(String)
     area = Column(String, nullable=True)
     wallet_balance = Column(Float, default=0.0)
     is_id_verified = Column(Boolean, default=False)
-    
+    sleep_schedule = Column(String, nullable=True)
+    noise_tolerance = Column(String, nullable=True)
+    cleanliness = Column(String, nullable=True)
+
 class Listing(Base):
     __tablename__ = "listings"
     id = Column(Integer, primary_key=True, index=True)
@@ -106,58 +29,56 @@ class Listing(Base):
     address = Column(String)
     area = Column(String)
     price = Column(String)
-    landlord_claims = Column(String)
+    landlord_claims = Column(Text)
     image_path = Column(String)
-    status = Column(String, default="pending") 
-    
+    status = Column(String, default="pending")
+
 class VerificationReport(Base):
     __tablename__ = "verification_reports"
     id = Column(Integer, primary_key=True, index=True)
     listing_id = Column(Integer, ForeignKey("listings.id"))
     verifier_id = Column(Integer, ForeignKey("users.id"))
     gemma_verdict = Column(String)
-    gemma_reason = Column(Text)
-    submitted_photos = Column(String) 
-    matched_claims = Column(String) 
-    mismatched_claims = Column(String) 
-    
+    gemma_reason = Column(String)
+    submitted_photos = Column(Text)
+    matched_claims = Column(Text)
+    mismatched_claims = Column(Text)
+
 class Transaction(Base):
     __tablename__ = "transactions"
     id = Column(Integer, primary_key=True, index=True)
     listing_id = Column(Integer, ForeignKey("listings.id"))
     tenant_id = Column(Integer, ForeignKey("users.id"))
     landlord_id = Column(Integer, ForeignKey("users.id"))
-    status = Column(String, default="held") # held, released
+    status = Column(String)
     is_split = Column(Boolean, default=False)
 
-class SplitInvite(Base):
-    __tablename__ = "split_invites"
+# NEW: Independent Roommate Connection Table
+class RoommatePair(Base):
+    __tablename__ = "roommate_pairs"
     id = Column(Integer, primary_key=True, index=True)
     sender_id = Column(Integer, ForeignKey("users.id"))
     receiver_id = Column(Integer, ForeignKey("users.id"))
-    listing_id = Column(Integer, ForeignKey("listings.id"))
-    status = Column(String, default="pending") # pending, accepted, declined
+    status = Column(String, default="pending")
 
 class Notification(Base):
     __tablename__ = "notifications"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    message = Column(String)
+    message = Column(Text)
     is_read = Column(Boolean, default=False)
 
-# --- NEW: Review Table ---
 class Review(Base):
     __tablename__ = "reviews"
     id = Column(Integer, primary_key=True, index=True)
     listing_id = Column(Integer, ForeignKey("listings.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
     transcribed_text = Column(Text)
-    sentiment = Column(String) # positive, negative, neutral
+    sentiment = Column(String)
     gemma_summary = Column(String)
     rating = Column(Integer, nullable=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
-# --- NEW: Maintenance Report Table ---
 class MaintenanceReport(Base):
     __tablename__ = "maintenance_reports"
     id = Column(Integer, primary_key=True, index=True)
@@ -165,8 +86,7 @@ class MaintenanceReport(Base):
     tenant_id = Column(Integer, ForeignKey("users.id"))
     description = Column(Text)
     image_path = Column(String)
-    status = Column(String, default="pending") # pending, resolved
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    status = Column(String, default="pending")
 
 Base.metadata.create_all(bind=engine)
 

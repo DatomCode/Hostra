@@ -158,13 +158,14 @@
 
             <!-- Payment Section -->
             <div id="paymentSection" style="display: none; margin-bottom: 3rem; text-align: center;">
-                <div class="bento-card" style="display: inline-block; padding: 2rem; width: 100%; max-width: 400px; margin: 0 auto; text-align: left;">
+                <div class="bento-card" style="display: inline-block; padding: 2rem; width: 100%; max-width: 450px; margin: 0 auto; text-align: left;">
                     <h3 style="margin-bottom: 1.5rem; text-align: center;">Rent Payment</h3>
                     
                     <div id="paymentUnpaidState" style="display: none;">
                         <button id="btnPayRent" class="btn btn-yellow" style="width: 100%; margin-bottom: 1rem;">Pay Full Rent (Demo)</button>
                         
-                        <div style="background: var(--bg-cream); padding: 1.5rem; border-radius: 8px; text-align: center; margin-bottom: 1rem;">
+                        <!-- Added an ID here so we can hide/show it based on roommate match! -->
+                        <div id="splitRentOptionBox" style="background: var(--bg-cream); padding: 1.5rem; border-radius: 8px; text-align: center; margin-bottom: 1rem;">
                             <p style="font-weight: 600; font-size: 0.95rem; color: var(--text-heavy); margin-bottom: 0.5rem;">Split Rent Option</p>
                             <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 1rem;">Pair with a roommate and share the cost.</p>
                             <button id="btnPaySplitRent" class="btn btn-blue-outline" style="width: 100%; font-size: 0.9rem;">Pay Your Share</button>
@@ -172,13 +173,34 @@
 
                         <p style="font-size: 0.85rem; color: #9CA3AF; margin-top: 0.5rem; margin-bottom: 0; text-align: center;">Demo Payment, no real money involved</p>
                     </div>
+                    
                     <div id="paymentHeldState" style="display: none;">
                         <p style="font-weight: 600; color: #F59E0B; margin-bottom: 1rem; font-size: 1.1rem; text-align: center;">Held in Escrow</p>
-                        <button id="btnConfirmMoveIn" class="btn btn-primary btn-dark" style="width: 100%;">Confirm Move-In</button>
-                        <p style="font-size: 0.85rem; color: #9CA3AF; margin-top: 0.5rem; margin-bottom: 0; text-align: center;">Demo Payment, no real money involved</p>
+                        
+                        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                            <button id="btnConfirmMoveIn" class="btn btn-primary btn-dark" style="flex: 1;">Confirm Move-In</button>
+                            <button id="btnRejectHouse" class="btn btn-blue-outline" style="flex: 1; color: #EF4444; border-color: #EF4444;">I don't like it</button>
+                        </div>
+                        
+                        <div id="refundReasonSection" style="display: none; margin-top: 1.5rem; text-align: left; background: #FEF2F2; padding: 1.5rem; border-radius: 8px; border: 1px solid #FECACA;">
+                            <label style="font-weight: 600; color: #991B1B; font-size: 0.9rem;">Why are you rejecting this house?</label>
+                            <textarea id="refundReasonText" placeholder="e.g. The roof is leaking, place is dirty..." style="width: 100%; min-height: 80px; margin-top: 0.5rem; padding: 0.5rem; border: 1px solid #FCA5A5; border-radius: 4px; font-family: 'DM Sans', sans-serif;"></textarea>
+                            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                <button id="btnSubmitRefund" class="btn btn-yellow" style="flex: 1; padding: 0.5rem; font-size: 0.9rem; background: #EF4444;">Submit & Get Refund</button>
+                                <button id="btnCancelRefund" class="btn btn-light" style="flex: 1; padding: 0.5rem; font-size: 0.9rem;">Cancel</button>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 0.85rem; color: #9CA3AF; margin-top: 1rem; margin-bottom: 0; text-align: center;">Demo Payment, no real money involved</p>
                     </div>
+                    
                     <div id="paymentReleasedState" style="display: none; text-align: center;">
                         <p style="font-weight: 600; color: var(--verified-green); margin-bottom: 0; font-size: 1.1rem;">Released to Landlord</p>
+                    </div>
+
+                    <div id="paymentRefundedState" style="display: none; text-align: center;">
+                        <p style="font-weight: 600; color: #EF4444; margin-bottom: 0; font-size: 1.1rem;">Payment Fully Refunded</p>
+                        <p style="font-size: 0.85rem; color: #6B7280; margin-top: 0.5rem;">You rejected this property. The money was returned to your wallet.</p>
                     </div>
                 </div>
             </div>
@@ -377,26 +399,74 @@
                 document.getElementById('paymentSection').style.display = 'block';
                 const data = await api.getEscrowForListing(listingId);
                 
+                // Hide everything first
                 document.getElementById('paymentUnpaidState').style.display = 'none';
                 document.getElementById('paymentHeldState').style.display = 'none';
                 document.getElementById('paymentReleasedState').style.display = 'none';
+                document.getElementById('paymentRefundedState').style.display = 'none';
                 document.getElementById('maintenanceSection').style.display = 'none';
 
-                if (data && data.transaction) {
-                    currentTransactionId = data.transaction.id;
-                    if (data.transaction.status === 'held') {
-                        document.getElementById('paymentHeldState').style.display = 'block';
-                    } else if (data.transaction.status === 'released') {
-                        document.getElementById('paymentReleasedState').style.display = 'block';
-                        document.getElementById('maintenanceSection').style.display = 'block';
-                    }
-                } else {
+                currentTransactionId = data.tx_id; // Store ID if it exists
+
+                if (data.status === 'held') {
+                    // Fully funded!
+                    document.getElementById('paymentHeldState').style.display = 'block';
+                } else if (data.status === 'released') {
+                    document.getElementById('paymentReleasedState').style.display = 'block';
+                    document.getElementById('maintenanceSection').style.display = 'block';
+                } else if (data.status === 'refunded') {
+                    document.getElementById('paymentRefundedState').style.display = 'block';
+                } else if (data.status === 'waiting_for_roommate') {
+                    // You paid your half, they haven't paid yet
                     document.getElementById('paymentUnpaidState').style.display = 'block';
+                    document.getElementById('paymentUnpaidState').innerHTML = `
+                        <div style="background: #FEF3C7; border: 1px solid #FDE68A; padding: 1.5rem; border-radius: 8px; text-align: center;">
+                            <p style="font-weight: 600; color: #92400E; margin-bottom: 0.5rem;">Half Paid!</p>
+                            <p style="font-size: 0.9rem; color: #B45309; margin: 0;">You have paid your share. Waiting for <strong>${data.roommate_name}</strong> to pay their half so we can secure the house!</p>
+                        </div>
+                    `;
+                } else if (data.status === 'roommate_paid') {
+                    // They paid their half, you need to pay yours!
+                    document.getElementById('paymentUnpaidState').style.display = 'block';
+                    document.getElementById('paymentUnpaidState').innerHTML = `
+                        <div style="background: #ECFCCB; border: 1px solid #BEF264; padding: 1.5rem; border-radius: 8px; text-align: center; margin-bottom: 1rem;">
+                            <p style="font-weight: 600; color: #3F6212; margin-bottom: 0.5rem;">Action Required!</p>
+                            <p style="font-size: 0.9rem; color: #4D7C0F; margin-bottom: 1rem;"><strong>${data.roommate_name}</strong> just paid their half! Pay your share below to secure the house.</p>
+                            <button id="btnPaySplitRent" class="btn btn-yellow" style="width: 100%;" onclick="executePayment(true)">Pay Your Half Now</button>
+                        </div>
+                    `;
+                } else {
+                    // Status is 'unpaid'. Nobody has paid anything.
+                    document.getElementById('paymentUnpaidState').style.display = 'block';
+                    
+                    let html = `<button id="btnPayRent" class="btn btn-dark" style="width: 100%; margin-bottom: 1rem;" onclick="executePayment(false)">Pay Full Rent (Demo)</button>`;
+                    
+                    if (data.has_roommate) {
+                        html += `
+                            <div style="background: var(--bg-cream); padding: 1.5rem; border-radius: 8px; text-align: center;">
+                                <p style="font-weight: 600; font-size: 0.95rem; color: var(--text-heavy); margin-bottom: 0.5rem;">Split Rent with ${data.roommate_name}</p>
+                                <button id="btnPaySplitRent" class="btn btn-blue-outline" style="width: 100%;" onclick="executePayment(true)">Pay Your Half First</button>
+                            </div>
+                        `;
+                    } else {
+                        html += `<p style="font-size: 0.85rem; color: #6B7280; text-align: center; margin-top: 1rem;">Match with a roommate first to unlock split payment.</p>`;
+                    }
+                    document.getElementById('paymentUnpaidState').innerHTML = html;
                 }
-            } catch(e) {
-                console.error("Error loading escrow status", e);
-            }
+
+            } catch(e) { console.error("Error loading escrow status", e); }
         }
+
+        // Helper function for the dynamic buttons we just created
+        window.executePayment = async function(isSplit) {
+            try {
+                alert("Processing Payment...");
+                await api.payEscrow(listingId, isSplit);
+                await loadEscrowStatus();
+            } catch(e) {
+                alert(e.message);
+            }
+        };
 
         document.getElementById('btnPayRent')?.addEventListener('click', async () => {
             try {
@@ -435,6 +505,52 @@
                 alert(e.message);
                 document.getElementById('btnConfirmMoveIn').disabled = false;
                 document.getElementById('btnConfirmMoveIn').innerText = 'Confirm Move-In';
+            }
+        });
+
+        // --- Refund Handler Scripts ---
+        document.getElementById('btnRejectHouse')?.addEventListener('click', () => {
+            document.getElementById('refundReasonSection').style.display = 'block';
+            document.getElementById('btnConfirmMoveIn').style.display = 'none';
+            document.getElementById('btnRejectHouse').style.display = 'none';
+        });
+
+        document.getElementById('btnCancelRefund')?.addEventListener('click', () => {
+            document.getElementById('refundReasonSection').style.display = 'none';
+            document.getElementById('btnConfirmMoveIn').style.display = 'block';
+            document.getElementById('btnRejectHouse').style.display = 'block';
+        });
+
+        document.getElementById('btnSubmitRefund')?.addEventListener('click', async () => {
+            const reason = document.getElementById('refundReasonText').value.trim();
+            
+            // Check for critical variables!
+            if (!reason) { alert("Please provide a reason."); return; }
+            if (!currentTransactionId) { alert("Error: No transaction found to refund."); return; }
+            
+            const btn = document.getElementById('btnSubmitRefund');
+            btn.disabled = true;
+            btn.innerText = 'Refunding...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/escrow/${currentTransactionId}/refund`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.getToken()}`
+                    },
+                    body: JSON.stringify({ reason: reason })
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Refund failed");
+                
+                alert("Refund successful!");
+                await loadEscrowStatus();
+            } catch(e) {
+                alert("Refund Error: " + e.message);
+                btn.disabled = false;
+                btn.innerText = 'Submit & Get Refund';
             }
         });
 
@@ -583,38 +699,35 @@
             }
         }
 
-        btnSubmit.addEventListener('click', async () => {
+       btnSubmit.addEventListener('click', async () => {
             const text = reviewTextArea.value.trim();
             const ratingRadio = document.querySelector('input[name="rating"]:checked');
-            const rating = ratingRadio ? parseInt(ratingRadio.value) : null;
+            const rating = ratingRadio ? parseInt(ratingRadio.value) : 3;
             
-            if (!text) {
-                alert('Please enter a review or record a voice note.');
-                return;
-            }
+            if (!text) { alert('Please enter a review!'); return; }
+            if (!listingId) { alert('Error: No listing detected.'); return; } // Added check
 
             btnSubmit.disabled = true;
             btnSubmit.innerText = 'Submitting...';
 
             try {
-                await api.submitReview(listingId, text, rating);
+                // Log what we are sending so we can see if it's the right data
+                console.log("Submitting review for:", listingId, {text, rating});
+               await api.submitReview(listingId, text, rating);
+               
 
+                alert('Review submitted successfully!');
                 reviewTextArea.value = '';
-                if (ratingRadio) ratingRadio.checked = false;
-                recordStatus.innerText = 'Review submitted successfully!';
-                recordStatus.style.color = 'var(--verified-green)';
-                setTimeout(() => recordStatus.innerText = '', 3000);
-                
                 loadReviews();
             } catch (e) {
-                alert(e.message);
-                console.error(e);
+                // Now you will see the REAL error in the browser console (F12)
+                console.error("Submission Error:", e);
+                alert("Server error: " + e.message);
             } finally {
                 btnSubmit.disabled = false;
                 btnSubmit.innerText = 'Submit Review';
             }
         });
-
         loadListingDetails();
     </script>
 </body>

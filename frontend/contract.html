@@ -3,112 +3,383 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hostra - AI Agreement Translator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Agreement Translator | Hostra</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .translator-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .upload-card {
+            background: var(--card-surface);
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            box-shadow: var(--shadow-bento);
+            border: 1px solid #E5E7EB;
+            text-align: center;
+        }
+
+        .upload-card h2 {
+            margin-top: 0;
+            color: var(--text-dark);
+        }
+
+        .upload-card p {
+            color: #6B7280;
+            margin-bottom: 2rem;
+        }
+
+        .drop-zone {
+            border: 2px dashed #CBD5E1;
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #F8FAFC;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--primary);
+            background-color: #F1F5F9;
+        }
+
+        .drop-zone-text {
+            color: #475569;
+            font-weight: 500;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .results-card {
+            background: var(--card-surface);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-bento);
+            border: 1px solid #E5E7EB;
+            display: none;
+        }
+
+        .results-card h3 {
+            margin-top: 0;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+        }
+
+        .analysis-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .analysis-section h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+            color: #374151;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .summary-box {
+            background-color: #F8FAFC;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #E2E8F0;
+            color: #334155;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .clause-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .clause-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .clause-item.red-flag {
+            background-color: #FEF2F2;
+            border: 1px solid #FCA5A5;
+            color: #991B1B;
+        }
+
+        .clause-item.fair-clause {
+            background-color: #F0FDF4;
+            border: 1px solid #BBF7D0;
+            color: #166534;
+        }
+
+        .clause-item.empty-state {
+            background-color: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            color: #64748B;
+        }
+
+        .clause-icon {
+            flex-shrink: 0;
+            font-size: 1.25rem;
+        }
+
+        .loading-state {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .doc-scanner {
+            position: relative;
+            width: 48px;
+            height: 64px;
+            border: 3px solid #CBD5E1;
+            border-radius: 6px;
+            margin: 0 auto 1.5rem auto;
+            background: #F8FAFC;
+            overflow: hidden;
+        }
+        .doc-scanner::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--campus-blue);
+            box-shadow: 0 0 8px var(--campus-blue);
+            animation: scanLine 1.5s linear infinite;
+        }
+        @keyframes scanLine {
+            0% { transform: translateY(-4px); }
+            100% { transform: translateY(64px); }
+        }
+
+        .error-message {
+            display: none;
+            color: #B91C1C;
+            background-color: #FEF2F2;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #FECACA;
+            margin-top: 1rem;
+            text-align: left;
+        }
+    </style>
 </head>
-<body style="background-color: var(--bg-light); font-family: 'Outfit', sans-serif;">
-    <div class="dashboard-container" style="max-width: 800px; margin: 40px auto; padding: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <h2>AI Lease Agreement Translator</h2>
-            <a href="student-dashboard.html" class="btn btn-text">← Back to Dashboard</a>
+<body>
+    <header class="dashboard-header">
+        <div class="container">
+            <a href="index.html" class="logo">Hostra</a>
+            <div class="header-actions">
+                <a href="student-dashboard.html" class="btn-text">Dashboard</a>
+            </div>
         </div>
+    </header>
 
-        <div class="card" style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 2rem;">
-            <h3 style="margin-bottom: 0.5rem;">Upload Rental Contract</h3>
-            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Upload your lease document or agreement photo. Gemma will scan it for hidden landlord traps and unfair clauses.</p>
+    <main class="translator-container">
+        <div class="upload-card">
+            <h2>Agreement Translator</h2>
+            <p>Upload your tenancy agreement and we'll flag anything unusual in plain English before you sign.</p>
             
-            <div id="contractForm">
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <input type="file" id="contractFile" accept="image/*,application/pdf" style="padding: 10px; width: 100%; border: 1px dashed var(--border-color); border-radius: 8px;">
-                </div>
-                <button type="button" class="btn btn-yellow" id="translateBtn" onclick="handleContractTranslate()" style="width: 100%; padding: 12px;">Scan & Translate Contract</button>
+            <div class="drop-zone" id="drop-zone">
+                <div class="drop-zone-text">Drag & drop your agreement photo here<br><br>or click to browse files</div>
+                <input type="file" id="file-input" accept="image/*">
+            </div>
+
+            <div class="loading-state" id="loading-state">
+                <div class="doc-scanner"></div>
+                <div style="color: #6B7280; font-weight: 500;">Reading your agreement... This might take a few seconds.</div>
+            </div>
+
+            <div class="error-message" id="error-message"></div>
+        </div>
+
+        <div class="results-card" id="results-card">
+            <h3>Contract Breakdown</h3>
+            
+            <div class="analysis-section">
+                <h4>Plain Summary</h4>
+                <p class="summary-box" id="plain-summary"></p>
             </div>
             
-            <div id="loadingMsg" style="display: none; text-align: center; margin-top: 1.5rem; font-weight: 600; color: var(--primary-color);">
-                Gemma is analyzing legal clauses... Please wait.
+            <div class="analysis-section">
+                <h4>Red Flags 🚩</h4>
+                <ul class="clause-list" id="red-flags-list"></ul>
+            </div>
+
+            <div class="analysis-section">
+                <h4>Fair Clauses ✅</h4>
+                <ul class="clause-list" id="fair-clauses-list"></ul>
             </div>
         </div>
+    </main>
 
-        <!-- Results Section -->
-        <div id="resultsContainer" style="display: none;">
-            <!-- Summary Card -->
-            <div class="card" style="background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-                <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">Plain English Summary</h4>
-                <p id="summaryText" style="line-height: 1.6; color: var(--text-dark);"></p>
-            </div>
-
-            <!-- Red Flags Card -->
-            <div class="card" style="background: #fff5f5; border: 1px solid #feb2b2; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
-                <h4 style="color: #c53030; margin-bottom: 0.5rem;">🚩 Hidden Traps & Red Flags</h4>
-                <ul id="redFlagsList" style="padding-left: 20px; line-height: 1.6; color: #742a2a;"></ul>
-            </div>
-
-            <!-- Fair Clauses Card -->
-            <div class="card" style="background: #f0fff4; border: 1px solid #9ae6b4; padding: 1.5rem; border-radius: 12px;">
-                <h4 style="color: #276749; margin-bottom: 0.5rem;">✅ Fair & Standard Clauses</h4>
-                <ul id="fairClausesList" style="padding-left: 20px; line-height: 1.6; color: #22543d;"></ul>
-            </div>
-        </div>
-    </div>
-
+    <script src="js/animations.js"></script>
     <script src="js/api.js"></script>
     <script>
-        if (!session.isAuthenticated()) {
+        if (!session.isAuthenticated() || session.getRole() !== 'student') {
             window.location.href = 'login.html';
         }
 
-        async function handleContractTranslate() {
-            const fileInput = document.getElementById('contractFile');
-            const btn = document.getElementById('translateBtn');
-            const loading = document.getElementById('loadingMsg');
-            const results = document.getElementById('resultsContainer');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const loadingState = document.getElementById('loading-state');
+        const resultsCard = document.getElementById('results-card');
+        const plainSummary = document.getElementById('plain-summary');
+        const redFlagsList = document.getElementById('red-flags-list');
+        const fairClausesList = document.getElementById('fair-clauses-list');
+        const errorMessage = document.getElementById('error-message');
 
-            if (fileInput.files.length === 0) {
-                alert('Please select a lease document first.');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('dragover');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            let dt = e.dataTransfer;
+            let files = dt.files;
+            handleFiles(files);
+        });
+
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+
+        async function handleFiles(files) {
+            if (files.length === 0) return;
+            
+            const file = files[0];
+            if (!file.type.startsWith('image/')) {
+                showError("Please upload an image file.");
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            uploadFile(file);
+        }
 
-            btn.disabled = true;
-            btn.textContent = 'Analyzing...';
-            loading.style.display = 'block';
-            results.style.display = 'none';
+        async function uploadFile(file) {
+            dropZone.style.display = 'none';
+            loadingState.style.display = 'block';
+            resultsCard.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            plainSummary.textContent = '';
+            redFlagsList.innerHTML = '';
+            fairClausesList.innerHTML = '';
+
+            const formData = new FormData();
+            formData.append('image', file);
 
             try {
-                const response = await api.translateContract(formData); // Ensure api.js has translateContract wrapper
-                if (response.success) {
-                    const data = response.analysis;
-                    
-                    document.getElementById('summaryText').textContent = data.summary;
-                    
-                    const redList = document.getElementById('redFlagsList');
-                    redList.innerHTML = '';
-                    (data.red_flags || []).forEach(flag => {
-                        const li = document.createElement('li');
-                        li.textContent = flag;
-                        redList.appendChild(li);
-                    });
+                const response = await fetch(`${API_BASE_URL}/contract/translate`, {
+                    method: 'POST',
+                    headers: authHeader(),
+                    body: formData
+                });
 
-                    const fairList = document.getElementById('fairClausesList');
-                    fairList.innerHTML = '';
-                    (data.fair_clauses || []).forEach(clause => {
-                        const li = document.createElement('li');
-                        li.textContent = clause;
-                        fairList.appendChild(li);
-                    });
-
-                    results.style.display = 'block';
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || "Upload failed");
                 }
+
+                const data = await response.json();
+                loadingState.style.display = 'none';
+
+                if (data.raw_result && data.raw_result.verdict === 'error') {
+                    showError("Couldn't read that document clearly, try a clearer photo.");
+                    dropZone.style.display = 'block';
+                    return;
+                }
+
+                // Render Plain Summary
+                plainSummary.textContent = data.plain_summary || "No segment summary compiled.";
+
+                // Render Red Flags Section
+                if (data.red_flags && data.red_flags.length > 0) {
+                    data.red_flags.forEach(flag => {
+                        const li = document.createElement('li');
+                        li.className = 'clause-item red-flag';
+                        li.innerHTML = `
+                            <div class="clause-icon">🚩</div>
+                            <div>${flag}</div>
+                        `;
+                        redFlagsList.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.className = 'clause-item empty-state';
+                    li.innerHTML = `
+                        <div class="clause-icon">🍃</div>
+                        <div>No critical traps or malicious payment clauses identified in this document portion.</div>
+                    `;
+                    redFlagsList.appendChild(li);
+                }
+
+                // Render Fair Clauses Section
+                if (data.fair_clauses && data.fair_clauses.length > 0) {
+                    data.fair_clauses.forEach(clause => {
+                        const li = document.createElement('li');
+                        li.className = 'clause-item fair-clause';
+                        li.innerHTML = `
+                            <div class="clause-icon">✅</div>
+                            <div>${clause}</div>
+                        `;
+                        fairClausesList.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.className = 'clause-item empty-state';
+                    li.innerHTML = `
+                        <div class="clause-icon">ℹ️</div>
+                        <div>No distinct student-favorable protections listed explicitly in this fragment.</div>
+                    `;
+                    fairClausesList.appendChild(li);
+                }
+                
+                resultsCard.style.display = 'block';
+                dropZone.style.display = 'block';
+
             } catch (err) {
-                alert('Failed to analyze document. Please try a clearer scan or image.');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Scan & Translate Contract';
-                loading.style.display = 'none';
+                loadingState.style.display = 'none';
+                dropZone.style.display = 'block';
+                showError(err.message || "An unexpected error occurred.");
             }
+        }
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorMessage.style.display = 'block';
         }
     </script>
 </body>

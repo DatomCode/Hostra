@@ -92,7 +92,7 @@
     <main class="container dashboard-content" style="padding-top: 40px; gap: 40px;">
         <div style="text-align: center;">
             <h2>Roommate Match</h2>
-            <p>Find your perfect off-campus roommate and split rent.</p>
+            <p>Find your perfect off-campus roommate before house hunting!</p>
         </div>
 
         <div class="bento-card">
@@ -118,10 +118,12 @@
 
     <script src="js/api.js"></script>
     <script>
+        // Ensure user is logged in
         if (!session.isAuthenticated() || session.getRole() !== 'student') {
             window.location.href = 'login.html';
         }
 
+        // Logout logic
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             try { await api.logout(); } catch (err) {}
             session.clear();
@@ -137,6 +139,7 @@
         let recognition;
         let isRecording = false;
 
+        // Voice recognition setup
         if ('webkitSpeechRecognition' in window) {
             recognition = new webkitSpeechRecognition();
             recognition.continuous = true;
@@ -200,26 +203,26 @@
 
         btnRecord.addEventListener('click', toggleRecording);
 
-        async function handleInviteToSplitRent(roommateId, btnElement) {
-            const listingId = prompt("Enter the ID of the property listing you want to split (Demo mode):");
-            if (!listingId) return;
-
+        // THE NEW FUNCTION TO SEND A ROOMMATE REQUEST
+        async function handleRoommateRequest(roommateId, btnElement) {
             btnElement.disabled = true;
-            btnElement.innerText = "Sending Invite...";
+            btnElement.innerText = "Sending Request...";
 
             try {
-                await api.sendSplitRentInvitation(roommateId, listingId);
-                btnElement.innerText = "Invite Sent ✅";
+                // Call the new API we just created in api.js
+                await api.sendRoommateRequest(roommateId);
+                btnElement.innerText = "Request Sent ✅";
                 btnElement.style.backgroundColor = "var(--verified-green)";
                 btnElement.style.color = "white";
                 btnElement.style.borderColor = "var(--verified-green)";
             } catch (err) {
-                alert("Failed to send split rent invite.");
+                alert("Failed to send request.");
                 btnElement.disabled = false;
-                btnElement.innerText = "Invite to Split Rent";
+                btnElement.innerText = "Send Roommate Request";
             }
         }
 
+        // LOAD AND DISPLAY MATCHES
         async function loadMatches() {
             try {
                 const data = await api.getRoommateMatches();
@@ -247,12 +250,12 @@
                             <span class="trait-badge">Noise: ${match.traits.noise_tolerance || 'Unknown'}</span>
                             <span class="trait-badge">Clean: ${match.traits.cleanliness || 'Unknown'}</span>
                         </div>
-                        <button class="btn btn-blue-outline split-invite-btn" style="width: 100%;">Invite to Split Rent</button>
+                        <button class="btn btn-blue-outline roommate-req-btn" style="width: 100%;">Send Roommate Request</button>
                     `;
 
-                    // Attach event listener dynamically
-                    const inviteBtn = card.querySelector('.split-invite-btn');
-                    inviteBtn.addEventListener('click', () => handleInviteToSplitRent(match.id, inviteBtn));
+                    // Attach the event listener dynamically to the correct function!
+                    const inviteBtn = card.querySelector('.roommate-req-btn');
+                    inviteBtn.addEventListener('click', () => handleRoommateRequest(match.id, inviteBtn));
 
                     matchesList.appendChild(card);
                 });
@@ -262,6 +265,7 @@
             }
         }
 
+        // SUBMIT PROFILE BUTTON LOGIC
         btnSubmit.addEventListener('click', async () => {
             const text = profileTextArea.value.trim();
             if (!text) {
@@ -290,6 +294,7 @@
             }
         });
 
+        // Initially load matches if the user already has a profile
         loadMatches();
     </script>
 </body>
