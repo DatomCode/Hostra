@@ -103,18 +103,18 @@ const api = {
     // ---------------------------------------------------------
     // THE FIX: Pointing the fetch request to the correct Python route
     // ---------------------------------------------------------
-    async verifyListing(listingId, formData) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/listings/${listingId}/verify`, {
-                method: 'POST',
-                headers: { ...authHeader() },
-                body: formData
-            });
-            if (!response.ok) throw new Error('Verification failed');
+  async verifyListing(listingId, formData) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/verify/${listingId}`, {
+            method: 'POST',
+            headers: { ...authHeader() },
+            body: formData
+        });
+        if (!response.ok) throw new Error('Verification failed');
             return await response.json();
         } catch (error) { handleAuthError(error); throw error; }
     },
-
+    
     async getVerifyFeed(showAll = false) {
         try {
             const url = showAll ? `${API_BASE_URL}/verify/feed?show_all=true` : `${API_BASE_URL}/verify/feed`;
