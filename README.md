@@ -1,149 +1,192 @@
 # Hostra 🏠⚡
 
-> **Student-Powered Off-Campus Housing Verification & Escrow Platform**
-> *Built for the Gemma 4 Hackathon Sprint (Campus Infrastructure Track).*
+> **AI-Verified Student Housing Infrastructure**
+> Built for the Build With Gemma Hackathon Sprint (GDGoC LAUTECH) — **Campus Infra for Student** track.
+
+[Live Demo](hostra1.netlify.app) · [Kaggle Writeup](https://www.kaggle.com/competitions/build-with-gemma-gdgoc-lautech/writeups/new-writeup-1784316401597) 
 
 ---
 
-## 📖 Overview
+## Table of Contents
 
-Every semester, thousands of university students (such as those at LAUTECH in Ogbomoso) face a high-risk off-campus rental market plagued by fraudulent agents, unverified property claims, fake photos, and hidden legal traps in lease agreements.
-
-**Hostra** solves this trust deficit by combining **Gemma 4's advanced multimodal intelligence**, secure financial escrow, and student-powered physical verification workflows into a single, cohesive ecosystem.
-
----
-
-## 🚀 Core Features
-
-1. **Multimodal Property Verification (`verifier.html`)**
-   - Student verifiers physically inspect apartments in areas like UnderG and Adenike, uploading live site photos.
-   - **Gemma 4 AI Audit:** Streams images directly to the Gemma model alongside the landlord's original claims (e.g., running water, tiled floors) to generate a strict JSON verdict (`approved`/`rejected`) with specific matched and mismatched claims.
-   - Approved properties instantly unlock on the student feed and reward verifiers with wallet credits.
-
-2. **AI Lease Agreement Translator (`contract.html`)**
-   - Students can upload complex rental agreements or document scans.
-   - **Gemma 4 Legal Analysis:** Translates legal jargon into plain-English summaries, highlighting **🚩 Red Flags & Hidden Traps** (such as unlawful fees or unreasonable curfews) versus **✅ Fair Clauses**.
-
-3. **Secure Escrow & Split-Rent System**
-   - Eliminates upfront cash loss to fraudulent agents. Rent payments are locked safely in an internal escrow wallet and released upon move-in confirmation.
-   - **Roommate Matching Engine:** Allows students to find compatible peers based on lifestyle preferences and send automated split-rent invites.
-
+- [The Problem](#the-problem)
+- [How Hostra Solves It](#how-hostra-solves-it)
+- [Gemma 4 Integration (30%)](#-gemma-4-integration-30)
+- [Innovation & Impact (30%)](#-innovation--impact-30)
+- [Functionality (20%)](#-functionality-20)
+- [Technical Architecture](#technical-architecture)
+- [Project Structure](#project-structure)
+- [Setup & Installation](#setup--installation)
+- [API Reference](#api-reference)
+- [Presentation & Writeup (20%)](#-presentation--writeup-20)
+- [Known Limitations](#known-limitations)
 
 ---
 
-## 🛠️ Technical Architecture
+## The Problem
 
-- **Backend:** Python, FastAPI, SQLAlchemy, SQLite (`hostra.db`), Passlib (bcrypt password hashing).
-- **AI Engine:** Google GenAI SDK powered by Gemma 4 multimodal vision and structured JSON generation (`response_mime_type="application/json"`).
-- **Frontend:** HTML5, CSS3, JavaScript (Vanilla with asynchronous fetch APIs and modular routing).
+Every semester, students moving to LAUTECH in Ogbomoso step into an off-campus housing market that runs entirely on trust, and that trust keeps getting broken. Agents post listings for houses that don't exist, misrepresent property features, or disappear with deposits before move-in day. By the time a student finds out, the rent is gone and the semester has already started without them.
+
+## How Hostra Solves It
+
+Hostra replaces blind trust with a peer-verified, AI-audited process. A nearby student **Verifier** physically inspects a listed property against the landlord's stated claims and submits live photos. **Gemma 4** checks that evidence and only approves the listing if what's shown genuinely matches what was promised. Only AI-verified listings are ever shown to students browsing for housing, and the evidence behind every badge, not just the badge, is visible to the renter.
 
 ---
 
-## 📁 Project Structure
+## 🎯 Gemma 4 Integration (30%)
+
+Gemma 4 is the arbiter at the center of Hostra's trust model, not a bolt-on chatbot. Every AI call uses `response_mime_type="application/json"` to enforce a strict, parseable schema so the backend can act on results programmatically, no free-text guessing.
+
+| Feature | What Gemma 4 Does |
+|---|---|
+| **Hostel Verification** | Compares a verifier's live inspection photos against the landlord's claims. Returns `matched_claims`, `mismatched_claims`, a `verdict`, and a plain-English `reason`. Drives the listing's approval status directly. |
+| **Agreement Translator** | Reads a photographed tenancy agreement and returns a plain-English list of unusual or risky clauses. |
+| **Review Scribing** | Analyzes a student's review text and returns a sentiment label and a concise summary; aggregates all reviews for a listing into one overall verdict. |
+| **Roommate Matching** | Extracts structured lifestyle traits (sleep schedule, noise tolerance, cleanliness) from a student's note, then ranks and explains compatible matches. |
+| **LAUTECH ID Verification** | Reads an uploaded student ID photo and confirms it is a genuine LAUTECH ID before granting verified student status. |
+
+Gemma 4's output directly decides what happens next in the product, whether a listing goes live, whether a clause gets flagged, whether two students get matched, rather than just generating supporting text.
+
+---
+
+## 💡 Innovation & Impact (30%)
+
+- **Peer-led infrastructure, not a corporate inspection team.** Verification is crowdsourced from students who already live near the property, incentivized with real payment for each approved inspection, rather than relying on a company hiring its own inspectors.
+- **Evidence over assertion.** Renters can see the actual matched and mismatched claims behind every Verified badge, not just trust a green checkmark, addressing the exact "just take our word for it" problem that makes the current market untrustworthy.
+- **A trust loop that pays for itself.** Approved verifications pay the verifying student; declined ones cost the landlord nothing but keep the listing hidden until it's fixed, aligning every party's incentives toward telling the truth.
+- **Solves a problem specific to this campus and this moment**, off-campus housing scams are a recurring, well-known pain point for LAUTECH students specifically, not a generic, abstract use case retrofitted onto Gemma.
+
+---
+
+## ✅ Functionality (20%)
+
+Hostra is a full, working prototype, not a static mockup:
+
+- Real user accounts (student, landlord), with role-based access to protected routes.
+- A live listings feed, filterable by area, backed by a real SQLite database.
+- A working Verifier flow: accept a job, upload real inspection photos, get a real Gemma 4 verdict back, and see the listing status change live.
+- A working Agreement Translator, Review system, and Roommate Matching flow, each hitting Gemma 4 live, not a canned response.
+- A simulated escrow and wallet system demonstrating the full "pay → hold → confirm move-in → release" loop end to end, clearly labeled as a demo since it isn't connected to a real payment processor.
+- Deployed live: backend on Render, frontend on Netlify, reachable without running anything locally.
+
+See [Known Limitations](#known-limitations) below for what's intentionally out of scope or still being verified.
+
+---
+
+## Technical Architecture
+
+- **Backend:** FastAPI (Python), SQLAlchemy over SQLite, token-based authentication with role-based access control.
+- **AI Engine:** Gemma 4 via the Google GenAI SDK, structured JSON output enforced on every call.
+- **Frontend:** Plain HTML, CSS, and vanilla JavaScript calling the backend as a JSON API, chosen deliberately over a framework for iteration speed within a sprint window.
+- **Hosting:** Backend on Render, frontend on Netlify.
+
+## Project Structure
 
 ```text
 hostra/
 │
 ├── backend/
-│   ├── main.py                  # FastAPI application & API routes
-│   ├── database.py              # SQLAlchemy models & DB configuration
-│   └── uploads/                 # Storage for inspection & maintenance photos
+│   ├── main.py              # FastAPI app, all routes, and Gemma 4 integration
+│   ├── database.py          # SQLAlchemy models & DB configuration
+│   ├── uploads/              # Storage for listing, ID, and inspection photos
+│   └── requirements.txt      # Python dependencies
 │
-├── frontend/
-│   ├── css/                     # Global styles
-│   ├── js/                      # API client wrapper & state management
-│   ├── index.html               # Landing page
-│   ├── login.html                # Authentication portal
-│   ├── student-dashboard.html    # Main student housing feed
-│   ├── verifier.html             # Verifier inspection workflow
-│   └── contract.html             # AI Lease Agreement Translator
-│
-└── requirements.txt              # Python dependencies
+└── frontend/
+    ├── css/style.css
+    ├── js/
+    │   ├── api.js             # Shared API client & session handling
+    │   ├── animations.js       # Scroll-reveal and micro-interaction animations
+    │   └── dashboard-ui.js      # Shared dashboard behaviors (notifications, invites)
+    ├── index.html               # Landing page
+    ├── login.html / signup.html # Authentication
+    ├── student-dashboard.html    # Verified listings feed + roommate invites
+    ├── landlord-dashboard.html   # Landlord's own listings
+    ├── landlord.html              # Post a new listing
+    ├── verifier.html               # Verifier inspection & AI audit flow
+    ├── contract.html                # Agreement Translator
+    ├── roommate.html                 # Lifestyle profile & matches
+    ├── wallet.html                    # Earnings / escrow wallet
+    ├── profile.html                    # Account details
+    └── listing-detail.html              # Single listing, evidence, reviews, escrow
 ```
 
----
+## Setup & Installation
 
-## ⚙️ Setup & Installation Instructions
-
-Follow these step-by-step instructions to set up, configure, and run Hostra locally on your machine.
-
-### Step 1: Clone the Repository
-
-Open your terminal or command prompt and clone the project repository:
+### Backend (local development)
 
 ```bash
-git clone https://github.com/your-username/hostra.git
-cd hostra
-```
+cd backend
+python -m venv .venv
 
-### Step 2: Set Up the Python Virtual Environment
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
 
-Create and activate an isolated virtual environment to manage dependencies cleanly:
-
-```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate on Windows (Command Prompt / PowerShell):
-venv\Scripts\activate
-
-# Activate on macOS / Linux:
-source venv/bin/activate
-```
-
-### Step 3: Install Required Dependencies
-
-Install all required backend and AI libraries listed in `requirements.txt`:
-
-```bash
 pip install -r requirements.txt
 ```
 
-> **Note:** Ensure your `requirements.txt` contains `fastapi`, `uvicorn`, `sqlalchemy`, `pydantic`, `passlib`, `bcrypt`, `pillow`, and `google-genai`.
+Create a `.env` file in `backend/`:
 
-### Step 4: Configure Environment Variables
-
-Hostra relies on Google's GenAI SDK to interact with Gemma 4 models. Set your API key in your environment variables:
-
-**On Windows (Command Prompt):**
-```dos
-set GEMINI_API_KEY=your_actual_api_key_here
+```
+GEMINI_API_KEY=your_actual_api_key_here
 ```
 
-**On Windows (PowerShell):**
-```powershell
-$env:GEMINI_API_KEY="your_actual_api_key_here"
-```
-
-**On macOS / Linux:**
-```bash
-export GEMINI_API_KEY="your_actual_api_key_here"
-```
-
-### Step 5: Start the Backend FastAPI Server
-
-Navigate into your project root and start the server with auto-reload enabled using Uvicorn:
+Run the server:
 
 ```bash
-uvicorn backend.main:app --reload
+uvicorn app.main:app --reload
 ```
 
-The FastAPI backend server will launch and run locally at `http://127.0.0.1:8000`. You can access the interactive Swagger documentation at `http://127.0.0.1:8000/docs`.
+Backend runs at `http://127.0.0.1:8000`; interactive docs at `http://127.0.0.1:8000/docs`.
 
-### Step 6: Launch the Frontend
+### Frontend (local development)
 
-Open the `frontend/` folder in your code editor (such as VS Code) and serve the frontend files using a local development server like Live Server, or open `index.html` directly in your browser.
+Serve `frontend/` with any local dev server (e.g. VS Code Live Server), or open `index.html` directly. Confirm `API_BASE_URL` in `js/api.js` points to your backend.
 
----
+### Live Deployment
 
-## 🔌 Key API Endpoints Reference
+- **Backend (Render):** Set `GEMINI_API_KEY` in the service's environment variables. Confirm your deployed frontend's origin is listed in `main.py`'s CORS `origins`.
+- **Frontend (Netlify):** Confirm `API_BASE_URL` in `js/api.js` points to the live Render URL before deploying.
+
+## API Reference
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/auth/signup` | Register a new user (Student, Landlord, or Verifier) with secure bcrypt password hashing. |
-| `POST` | `/auth/login` | Authenticate user credentials and return session tokens. |
-| `GET` | `/verify/feed` | Fetch pending property listings filtered by location area. |
-| `POST` | `/verify/{listing_id}` | Upload site inspection photos for Gemma 4 multimodal audit. |
-| `POST` | `/translate-contract` | Upload and analyze lease agreements for hidden clauses and red flags. |
-| `POST` | `/escrow/pay` | Securely lock rent funds in escrow. |
-| `GET` | `/roommates/matches` | Retrieve compatible student roommate matches in your area. |
+| `POST` | `/auth/signup` | Register a new user (student, landlord). |
+| `POST` | `/auth/login` | Authenticate and receive a session token. |
+| `GET` | `/users/me` | Get the current user's profile. |
+| `POST` | `/users/verify-id` | Gemma checks an uploaded LAUTECH ID photo. |
+| `POST` | `/listings/` | Landlord creates a new listing. |
+| `GET` | `/listings/` | Fetch all listings. |
+| `GET` | `/listings/mine` | Fetch the current landlord's own listings. |
+| `GET` | `/listings/{listing_id}` | Fetch a single listing's details. |
+| `GET` | `/verify/feed` | Fetch pending listings for verifiers, filtered by area. |
+| `POST` | `/verify/{listing_id}` | Submit inspection photos for Gemma 4 to audit against landlord claims. |
+| `POST` | `/reviews/{listing_id}` | Submit a review; Gemma scores sentiment. |
+| `GET` | `/reviews/{listing_id}` | Fetch all reviews and an aggregated summary. |
+| `POST` | `/roommate/profile` | Submit a lifestyle note; Gemma extracts traits. |
+| `GET` | `/roommate/matches` | Get AI-ranked roommate matches. |
+| `POST` | `/escrow/pay` | Initiate a simulated rent payment, held in escrow. |
+| `POST` | `/escrow/{tx_id}/confirm-move-in` | Release held funds to the landlord's wallet. |
+| `GET` | `/wallet/me` | View current wallet balance and history. |
+
+Full route list is browsable live at `/docs` on the deployed backend.
+
+---
+
+## 📝 Presentation & Writeup (20%)
+
+- **Kaggle Writeup:** [link] — explains the problem, architecture, Gemma 4 usage, and engineering trade-offs made under sprint constraints.
+- **Demo Video:** [link] — walks through the Verifier flow and Agreement Translator live, showing real Gemma 4 output.
+- **Live App:** [link] — publicly accessible, no login required to view the landing page and public listings.
+
+---
+
+## Known Limitations
+
+Transparency here is intentional, we'd rather state trade-offs clearly than have them discovered mid-demo:
+
+- **Voice input is transcribed client-side** (Web Speech API) before being sent to Gemma as text, rather than sent as raw audio, due to hosting constraints encountered during the sprint.
+- **Escrow and wallet balances are simulated** and clearly labeled as a demo throughout the UI, no real payment processor is connected.
+- **Maintenance/repair-audit routes exist on the backend** but the end-to-end tenant-report → landlord-repair → Gemma-audit loop should be re-verified before being demonstrated live.
