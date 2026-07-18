@@ -1,7 +1,33 @@
 const API_BASE_URL = 'https://hostra.onrender.com';
 
+// 1. Session defined first so 'api' can use it
+const session = {
+    set(token, email, role, name, area) {
+        localStorage.setItem('hostra_token', token);
+        localStorage.setItem('hostra_email', email);
+        if (role) localStorage.setItem('hostra_role', role);
+        if (name) localStorage.setItem('hostra_name', name);
+        if (area) localStorage.setItem('hostra_area', area);
+    },
+    clear() {
+        localStorage.removeItem('hostra_token');
+        localStorage.removeItem('hostra_email');
+        localStorage.removeItem('hostra_role');
+        localStorage.removeItem('hostra_name');
+        localStorage.removeItem('hostra_area');
+    },
+    isAuthenticated() { return !!localStorage.getItem('hostra_token'); },
+    getToken() { return localStorage.getItem('hostra_token'); },
+    getEmail() { return localStorage.getItem('hostra_email'); },
+    getRole() { return localStorage.getItem('hostra_role') || 'student'; },
+    getName() { return localStorage.getItem('hostra_name'); },
+    getArea() { return localStorage.getItem('hostra_area'); }
+};
+
+// 2. Fixed authHeader to prevent "Bearer null" errors
 function authHeader() {
-    return { 'Authorization': `Bearer ${session.getToken()}` };
+    const token = session.getToken();
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
 function handleAuthError(error) {
@@ -11,6 +37,7 @@ function handleAuthError(error) {
     }
 }
 
+// 3. API Object
 const api = {
     async login(email, password) {
         try {
@@ -32,7 +59,7 @@ const api = {
             }
             const response = await fetch(`${API_BASE_URL}/auth/signup`, {
                 method: 'POST',
-                body: formData
+                body: formData // Browser handles headers automatically for FormData
             });
             if (!response.ok) throw new Error('Signup failed');
             return await response.json();
@@ -209,8 +236,6 @@ const api = {
         } catch (error) { handleAuthError(error); throw error; }
     },
 
-    // REPLACE everything from payEscrow downwards with this:
-
     async payEscrow(listingId, split = false) {
         try {
             const response = await fetch(`${API_BASE_URL}/escrow/pay`, {
@@ -244,7 +269,6 @@ const api = {
         } catch (error) { return { success: true, status: "unpaid" }; }
     },
 
-    // NEW ROOMMATE ROUTES
     async sendRoommateRequest(roommateId) {
         try {
             const response = await fetch(`${API_BASE_URL}/roommate/request`, {
@@ -279,9 +303,6 @@ const api = {
         } catch (error) { handleAuthError(error); throw error; }
     },
 
-    // Utilities
-    async submitMaintenanceIssue(listingId, formData) { /* ... keep as is ... */ },
-    async submitRepairAudit(listingId, formData) { /* ... keep as is ... */ },
     async getNotifications() {
         try {
             const response = await fetch(`${API_BASE_URL}/notifications`, {
@@ -293,35 +314,14 @@ const api = {
     }
 };
 
-        // Helper function for the dynamic buttons we just created
-        window.executePayment = async function(isSplit) {
-            try {
-                alert("Processing Payment...");
-                await api.payEscrow(listingId, isSplit);
-                await loadEscrowStatus();
-            } catch(e) {
-                alert(e.message);
-            }
-        };
-const session = {
-    set(token, email, role, name, area) {
-        localStorage.setItem('hostra_token', token);
-        localStorage.setItem('hostra_email', email);
-        if (role) localStorage.setItem('hostra_role', role);
-        if (name) localStorage.setItem('hostra_name', name);
-        if (area) localStorage.setItem('hostra_area', area);
-    },
-    clear() {
-        localStorage.removeItem('hostra_token');
-        localStorage.removeItem('hostra_email');
-        localStorage.removeItem('hostra_role');
-        localStorage.removeItem('hostra_name');
-        localStorage.removeItem('hostra_area');
-    },
-    isAuthenticated() { return !!localStorage.getItem('hostra_token'); },
-    getToken() { return localStorage.getItem('hostra_token'); },
-    getEmail() { return localStorage.getItem('hostra_email'); },
-    getRole() { return localStorage.getItem('hostra_role') || 'student'; },
-    getName() { return localStorage.getItem('hostra_name'); },
-    getArea() { return localStorage.getItem('hostra_area'); }
+// Helper function for dynamic buttons
+window.executePayment = async function(listingId, isSplit) {
+    try {
+        alert("Processing Payment...");
+        await api.payEscrow(listingId, isSplit);
+        // Assuming loadEscrowStatus is defined in your page
+        await loadEscrowStatus(); 
+    } catch(e) {
+        alert(e.message);
+    }
 };
