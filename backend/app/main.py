@@ -220,7 +220,7 @@ def create_listing(address: str = Form(...), area: str = Form(...), price: str =
 @app.get("/listings/")
 def get_all_listings(db: Session = Depends(get_db)):
     listings = db.query(Listing).all()
-    return {"listings": [{"id": l.id, "landlord_id": l.landlord_id, "address": l.address, "area": l.area, "price": l.price, "landlord_claims": l.landlord_claims, "image_path": l.image_path, "status": l.status} for l in listings]}
+    return {"listings": [{"id": l.id, "landlord_id": l.landlord_id, "address": l.address, "area": l.area, "price": l.price, "landlord_claims": l.landlord_claims, "image_path": l.image_path, "status": l.status, "ai_report": l.ai_report} for l in listings]}
 
 @app.get("/listings/mine")
 def get_my_listings(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -237,6 +237,7 @@ def get_single_listing(listing_id: int, db: Session = Depends(get_db)):
         "id": l.id, "landlord_id": l.landlord_id, "address": l.address, "area": l.area, 
         "price": l.price, "landlord_claims": l.landlord_claims, "image_path": l.image_path, 
         "status": l.status,
+        "ai_report": l.ai_report,
         "landlord_name": landlord.name if landlord else "Unknown",
         "landlord_phone": landlord.phone_number if landlord else "Not provided",
         "landlord_email": landlord.email if landlord else "Not provided"
