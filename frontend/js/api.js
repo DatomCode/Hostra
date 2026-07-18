@@ -100,9 +100,12 @@ const api = {
         } catch (error) { handleAuthError(error); throw error; }
     },
 
+    // ---------------------------------------------------------
+    // THE FIX: Pointing the fetch request to the correct Python route
+    // ---------------------------------------------------------
     async verifyListing(listingId, formData) {
         try {
-            const response = await fetch(`${API_BASE_URL}/verify/${listingId}`, {
+            const response = await fetch(`${API_BASE_URL}/listings/${listingId}/verify`, {
                 method: 'POST',
                 headers: { ...authHeader() },
                 body: formData
