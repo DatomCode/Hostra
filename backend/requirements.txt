@@ -8,3 +8,4 @@ passlib[bcrypt]
 google-genai
 python-dotenv
 Pillow
+gunicorn

@@ -129,7 +129,10 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 class LoginRequest(BaseModel):
     email: str
     password: str
-
+    
+class ReviewRequest(BaseModel):
+    transcribed_text: str
+    rating: int = None
 @app.post("/auth/login")
 def login(req: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == req.email).first()
@@ -384,6 +387,9 @@ class EscrowPayRequest(BaseModel):
     listing_id: int
     is_split: bool = False
 
+class RefundRequest(BaseModel):
+    reason: str
+
 @app.post("/escrow/pay")
 def pay_escrow(req: EscrowPayRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     listing = db.query(Listing).filter(Listing.id == req.listing_id).first()
@@ -507,11 +513,12 @@ def confirm_move_in(tx_id: int, user: User = Depends(get_current_user), db: Sess
     return {"success": True}
 
 @app.post("/escrow/{tx_id}/refund")
-def refund_escrow(tx_id: int, req: RefundRequest = Body(...), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # ... rest of your code stays the same
+def refund_escrow(tx_id: int, req: RefundRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     tx = db.query(Transaction).filter(Transaction.id == tx_id).first()
-    if not tx or tx.tenant_id != user.id: raise HTTPException(status_code=404, detail="Transaction not found")
-    if tx.status != "held": raise HTTPException(status_code=400, detail="Only held funds can be refunded")
+    if not tx or tx.tenant_id != user.id: 
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    if tx.status != "held": 
+        raise HTTPException(status_code=400, detail="Only held funds can be refunded")
         
     listing = db.query(Listing).filter(Listing.id == tx.listing_id).first()
     numeric_price = parse_price(listing.price)
@@ -541,6 +548,8 @@ def refund_escrow(tx_id: int, req: RefundRequest = Body(...), user: User = Depen
 # Reviews, Maintenance, Roommate Matching remain exactly identical...
 @app.post("/reviews/{listing_id}")
 def submit_review(listing_id: int, req: ReviewRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # The server now knows that 'req' must have 'transcribed_text' and 'rating'
+    # ... your existing logic here ...
     listing = db.query(Listing).filter(Listing.id == listing_id).first()
     if not listing: raise HTTPException(status_code=404, detail="Listing not found")
     prompt = f"Analyze this student review: '{req.transcribed_text}'. Return a JSON object with 'sentiment' (must be exactly 'positive', 'negative', or 'neutral') and 'gemma_summary' (a concise 3 to 5 word summary)."

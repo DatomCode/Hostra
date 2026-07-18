@@ -523,10 +523,8 @@
 
         document.getElementById('btnSubmitRefund')?.addEventListener('click', async () => {
             const reason = document.getElementById('refundReasonText').value.trim();
-            
-            // Check for critical variables!
             if (!reason) { alert("Please provide a reason."); return; }
-            if (!currentTransactionId) { alert("Error: No transaction found to refund."); return; }
+            if (!currentTransactionId) { alert("No transaction found."); return; }
             
             const btn = document.getElementById('btnSubmitRefund');
             btn.disabled = true;
@@ -539,14 +537,14 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${session.getToken()}`
                     },
-                    body: JSON.stringify({ reason: reason })
+                    body: JSON.stringify({ reason: reason }) // This matches the class RefundRequest
                 });
                 
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.detail || "Refund failed");
                 
                 alert("Refund successful!");
-                await loadEscrowStatus();
+                window.location.reload(); // Refresh the page
             } catch(e) {
                 alert("Refund Error: " + e.message);
                 btn.disabled = false;
