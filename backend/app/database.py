@@ -21,6 +21,8 @@ class User(Base):
     sleep_schedule = Column(String, nullable=True)
     noise_tolerance = Column(String, nullable=True)
     cleanliness = Column(String, nullable=True)
+    profile_picture = Column(String, default="/images/default_avatar.png")
+    phone_number = Column(String, nullable=True)
 
 class Listing(Base):
     __tablename__ = "listings"
@@ -32,6 +34,7 @@ class Listing(Base):
     landlord_claims = Column(Text)
     image_path = Column(String)
     status = Column(String, default="pending")
+    strike_count = Column(Integer, default=0)
 
 class VerificationReport(Base):
     __tablename__ = "verification_reports"
@@ -53,7 +56,6 @@ class Transaction(Base):
     status = Column(String)
     is_split = Column(Boolean, default=False)
 
-# NEW: Independent Roommate Connection Table
 class RoommatePair(Base):
     __tablename__ = "roommate_pairs"
     id = Column(Integer, primary_key=True, index=True)

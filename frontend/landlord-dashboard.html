@@ -85,7 +85,6 @@
                     🔔 <span id="notificationBadge" class="notification-badge">0</span>
                 </button>
                 
-                <!-- The hidden dropdown box that slides open -->
                 <div id="notificationDropdown" class="notification-dropdown" style="display: none;">
                     <div class="dropdown-header">
                         <h4>Notifications</h4>
@@ -114,7 +113,6 @@
             <div id="emptyMsg" style="display: none; color: #6B7280;">You have not posted any properties yet. Click 'Add New Property' to start.</div>
             
             <div class="listing-grid" id="listingsContainer">
-                <!-- Listings will be injected here -->
             </div>
         </div>
     </main>
@@ -139,7 +137,6 @@
             window.location.href = 'index.html';
         });
 
-        // Demo logic for handling repair uploads
         async function submitRepairAudit(listingId, fileInputId, btnElement) {
             const fileInput = document.getElementById(fileInputId);
             if (!fileInput.files.length) {
@@ -154,7 +151,6 @@
             formData.append('image', fileInput.files[0]);
 
             try {
-                // We call the API endpoint we added in api.js
                 await api.submitRepairAudit(listingId, formData);
                 alert("AI verified the repair! Maintenance funds have been released to the plumber.");
                 btnElement.innerText = "Resolved ✅";
@@ -190,7 +186,6 @@
                     card.style.transitionDelay = `${index * 0.08}s`;
                     const imageUrl = `${API_BASE_URL}${listing.image_path}`;
 
-                    // Demo mock: For hackathon purposes, we randomly show a maintenance request on verified properties to demonstrate the feature
                     let maintenanceHtml = '';
                     if (listing.status === 'verified' && Math.random() > 0.5) {
                         const fileInputId = `repair_file_${listing.id}`;
@@ -204,15 +199,22 @@
                         `;
                     }
 
+                    let statusBadge = '';
+                    if (listing.status === 'pending') {
+                        statusBadge = '<span class="badge-pending">Pending Verification</span>';
+                    } else if (listing.status === 'rejected') {
+                        statusBadge = '<span class="badge-pending" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;">Rejected ❌</span>';
+                    } else {
+                        statusBadge = '<div style="display: inline-flex; align-items: center; color: var(--verified-green); font-family: \'Outfit\', sans-serif; font-weight: 700;"><span class="verified-seal" style="margin-left: 0; margin-right: 8px;"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></span> Verified</div>';
+                    }
+
                     card.innerHTML = `
                         <img src="${imageUrl}" alt="Property" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNFMkU4RjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY0NzQ4YiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
                         <div class="listing-content">
                             <div class="listing-price">${listing.price}</div>
                             <div class="listing-address">${listing.address}</div>
                             <div class="listing-claims"><strong>Claims:</strong> ${listing.landlord_claims}</div>
-                            ${listing.status === 'pending' 
-                                ? '<span class="badge-pending">Pending Verification</span>' 
-                                : '<div style="display: inline-flex; align-items: center; color: var(--verified-green); font-family: \'Outfit\', sans-serif; font-weight: 700;"><span class="verified-seal" style="margin-left: 0; margin-right: 8px;"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></span> Verified</div>'}
+                            ${statusBadge}
                             ${maintenanceHtml}
                         </div>
                     `;

@@ -1,6 +1,5 @@
 const API_BASE_URL = 'https://hostra.onrender.com';
 
-// 1. Session defined first so 'api' can use it
 const session = {
     set(token, email, role, name, area) {
         localStorage.setItem('hostra_token', token);
@@ -24,7 +23,6 @@ const session = {
     getArea() { return localStorage.getItem('hostra_area'); }
 };
 
-// 2. Fixed authHeader to prevent "Bearer null" errors
 function authHeader() {
     const token = session.getToken();
     return token ? { 'Authorization': `Bearer ${token}` } : {};
@@ -37,7 +35,6 @@ function handleAuthError(error) {
     }
 }
 
-// 3. API Object
 const api = {
     async login(email, password) {
         try {
@@ -59,7 +56,7 @@ const api = {
             }
             const response = await fetch(`${API_BASE_URL}/auth/signup`, {
                 method: 'POST',
-                body: formData // Browser handles headers automatically for FormData
+                body: formData
             });
             if (!response.ok) throw new Error('Signup failed');
             return await response.json();
@@ -224,6 +221,18 @@ const api = {
         } catch (error) { handleAuthError(error); throw error; }
     },
 
+    async uploadProfilePicture(formData) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/profile-picture`, {
+                method: 'POST',
+                headers: { ...authHeader() },
+                body: formData
+            });
+            if (!response.ok) throw new Error('Failed to upload profile picture');
+            return await response.json();
+        } catch (error) { handleAuthError(error); throw error; }
+    },
+
     async uploadStudentID(formData) {
         try {
             const response = await fetch(`${API_BASE_URL}/users/verify-id`, {
@@ -314,12 +323,10 @@ const api = {
     }
 };
 
-// Helper function for dynamic buttons
 window.executePayment = async function(listingId, isSplit) {
     try {
         alert("Processing Payment...");
         await api.payEscrow(listingId, isSplit);
-        // Assuming loadEscrowStatus is defined in your page
         await loadEscrowStatus(); 
     } catch(e) {
         alert(e.message);

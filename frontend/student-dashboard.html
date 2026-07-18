@@ -48,13 +48,28 @@
             font-size: 0.95rem;
             margin-bottom: 1rem;
         }
-        .listing-claims {
-            font-size: 0.9rem;
-            color: #6B7280;
+
+        /* New CSS for Truth Badges */
+        .truth-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
             margin-bottom: 1rem;
             border-top: 1px solid #E5E7EB;
             padding-top: 1rem;
         }
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.3rem 0.5rem;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .badge-green { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+        .badge-red { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+        .badge-grey { background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; }
         
         .verifier-banner {
             background: linear-gradient(135deg, var(--campus-blue), #4F46E5);
@@ -226,17 +241,6 @@
             } catch (e) { alert("Failed to process."); }
         };
 
-        // window.handleInvite = async function(inviteId, action, listingId = null) {
-        //     try {
-        //         await api.answerInvite(inviteId, action);
-        //         if (action === 'accept') {
-        //             window.location.href = `listing-detail.html?listing_id=${listingId}`;
-        //         } else {
-        //             loadInvites(); // reload UI
-        //         }
-        //     } catch (e) { alert("Failed to process invite."); }
-        // };
-
         window.cancelInvite = async function(inviteId) {
             try {
                 await api.cancelInvite(inviteId);
@@ -261,6 +265,37 @@
                 }
 
                 verifiedProperties.forEach((listing, index) => {
+                    let badgesHtml = '';
+
+                    // The Brain Logic with Safety Net
+                    try {
+                        let report = null;
+                        if (listing.ai_report) {
+                            report = typeof listing.ai_report === 'string' ? JSON.parse(listing.ai_report) : listing.ai_report;
+                        }
+
+                        if (report && (report.matched_claims || report.mismatched_claims)) {
+                            if (report.matched_claims) {
+                                report.matched_claims.forEach(claim => {
+                                    badgesHtml += `<span class="badge badge-green">✅ ${claim}</span>`;
+                                });
+                            }
+                            if (report.mismatched_claims) {
+                                report.mismatched_claims.forEach(claim => {
+                                    badgesHtml += `<span class="badge badge-red">❌ ${claim}</span>`;
+                                });
+                            }
+                        } else {
+                            throw new Error("No parsed claims found");
+                        }
+                    } catch (e) {
+                        // The Catch Block (Fallback to grey boxes)
+                        const claims = listing.landlord_claims ? listing.landlord_claims.split(',') : [];
+                        claims.forEach(c => {
+                            if(c.trim()) badgesHtml += `<span class="badge badge-grey">⏳ ${c.trim()}</span>`;
+                        });
+                    }
+
                     const card = document.createElement('div');
                     card.className = 'listing-card reveal-item';
                     card.style.transitionDelay = `${index * 0.08}s`;
@@ -272,7 +307,12 @@
                         <div class="listing-content">
                             <div class="listing-price">${listing.price}</div>
                             <div class="listing-address">${listing.address}</div>
-                            <div class="listing-claims"><strong>Features:</strong> ${listing.landlord_claims}</div>
+                            
+                            <!-- Injected the Truth Badges -->
+                            <div class="truth-badges">
+                                ${badgesHtml}
+                            </div>
+                            
                             <div style="display: inline-flex; align-items: center; color: var(--verified-green); font-family: 'Outfit', sans-serif; font-weight: 700;"><span class="verified-seal" style="margin-left: 0; margin-right: 8px;"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></span> Hostra Verified</div>
                         </div>
                     `;

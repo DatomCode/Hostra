@@ -25,7 +25,6 @@
 
         <div id="loadingMsg" style="text-align: center; padding: 2rem; color: #6B7280;">Loading profile...</div>
 
-        <!-- Wallet Balance Card (For Students Only) -->
         <div id="walletCard" class="bento-card" style="display: none; padding: 2rem; text-align: center; margin-bottom: 2rem;">
             <h3 style="margin-bottom: 1rem;">Wallet Balance</h3>
             <div style="font-size: 3rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; color: var(--verified-green);">
@@ -34,7 +33,6 @@
             <a href="wallet.html" class="btn btn-blue-outline" style="text-decoration: none;">View Wallet History</a>
         </div>
 
-        <!-- Identity Verification Block -->
         <div id="identityCard" class="bento-card" style="display: none; padding: 2rem; margin-bottom: 2rem; background: #F8FAFC; border: 1px solid #CBD5E1;">
             <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                 🛡️ Verifier Status
@@ -52,7 +50,12 @@
 
         <div id="profileContent" class="bento-card" style="display: none; padding: 2.5rem;">
             <div style="text-align: center; margin-bottom: 2rem;">
-                <img src="images/default_avatar.png" alt="Profile Image" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #E5E7EB;">
+                <img id="profileAvatar" src="images/default_avatar.png" alt="Profile Image" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #E5E7EB; margin-bottom: 1rem;">
+                <div>
+                    <input type="file" id="pfpUpload" accept="image/*" style="display: none;">
+                    <button class="btn btn-blue-outline" onclick="document.getElementById('pfpUpload').click()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Change Picture</button>
+                </div>
+                <p id="pfpStatusMsg" style="font-size: 0.85rem; margin-top: 0.5rem; color: #4B5563;"></p>
             </div>
             <h3 style="margin-bottom: 2rem; border-bottom: 1px solid #E5E7EB; padding-bottom: 1rem;">Account Details</h3>
             
@@ -102,6 +105,28 @@
                 window.location.href = 'index.html';
             });
 
+            document.getElementById('pfpUpload').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                document.getElementById('pfpStatusMsg').textContent = 'Uploading...';
+                document.getElementById('pfpStatusMsg').style.color = '#4B5563';
+                
+                try {
+                    const res = await api.uploadProfilePicture(formData);
+                    document.getElementById('profileAvatar').src = API_BASE_URL + res.profile_picture;
+                    document.getElementById('pfpStatusMsg').textContent = 'Picture updated!';
+                    document.getElementById('pfpStatusMsg').style.color = 'var(--verified-green)';
+                    setTimeout(() => { document.getElementById('pfpStatusMsg').textContent = ''; }, 3000);
+                } catch (err) {
+                    document.getElementById('pfpStatusMsg').textContent = 'Failed to upload picture.';
+                    document.getElementById('pfpStatusMsg').style.color = '#EF4444';
+                }
+            });
+
             loadProfile();
         });
 
@@ -115,12 +140,15 @@
                 document.getElementById('profileEmail').textContent = data.email;
                 document.getElementById('profileRole').textContent = data.role;
                 document.getElementById('profileArea').value = data.area || '';
+                
+                if (data.profile_picture) {
+                    document.getElementById('profileAvatar').src = API_BASE_URL + data.profile_picture;
+                }
 
                 if (data.role === 'student') {
                     document.getElementById('walletCard').style.display = 'block';
                     document.getElementById('profileWalletBalance').textContent = (data.wallet_balance || 0).toLocaleString();
                     
-                    // Show identity upload if not verified yet
                     if (!data.is_id_verified) {
                         document.getElementById('identityCard').style.display = 'block';
                     }
@@ -133,7 +161,6 @@
             }
         }
 
-        // Handle Profile Update
         document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const statusMsg = document.getElementById('statusMsg');
@@ -156,7 +183,6 @@
             }
         });
 
-        // Handle ID Upload
         document.getElementById('idUploadForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnUploadId');

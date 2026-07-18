@@ -3,7 +3,7 @@ import json
 import shutil
 from typing import Optional
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Body # Add Body here
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -17,8 +17,8 @@ from PIL import Image
 
 import re
 
-# IMPORT UPDATED TO RoommatePair
 from .database import get_db, User, Listing, VerificationReport, Transaction, RoommatePair, Notification, Review, MaintenanceReport, SessionLocal
+
 load_dotenv()
 try:
     client = genai.Client()
@@ -29,8 +29,6 @@ MODEL_ID = "gemma-4-31b-it"
 
 os.makedirs("uploads", exist_ok=True)
 
-# ... (all your imports and setup remain the same) ...
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db = SessionLocal()
@@ -38,10 +36,9 @@ async def lifespan(app: FastAPI):
         if not db.query(User).filter(User.email == "david@student.lautech.edu.ng").first():
             print("Seeding database with wealthy test students...")
             
-            landlord1 = User(email="babaojo@email.com", password="password123", name="Baba Ojo", role="landlord")
-            landlord2 = User(email="iyaniola@email.com", password="password123", name="Iya Niola", role="landlord")
+            landlord1 = User(email="babaojo@email.com", password="password123", name="Baba Ojo", role="landlord", phone_number="08011111111")
+            landlord2 = User(email="iyaniola@email.com", password="password123", name="Iya Niola", role="landlord", phone_number="08022222222")
             
-            # Everyone gets ₦500,000 to test payments
             wallet_start = 500000.0
             
             student2 = User(email="david@student.lautech.edu.ng", password="password123", name="David O.", role="student", area="UnderG", is_id_verified=True, sleep_schedule="Night Owl", noise_tolerance="High", cleanliness="Medium", wallet_balance=wallet_start)
@@ -66,7 +63,6 @@ async def lifespan(app: FastAPI):
             db.add_all(listings)
             db.commit()
 
-            # ... (dummy reviews seeding logic remains the same) ...
             reviews_to_add = []
             for lst in listings:
                 reviews_to_add.append(Review(listing_id=lst.id, user_id=student2.id, transcribed_text="Great place!", sentiment="positive", gemma_summary="Good", rating=5))
@@ -78,19 +74,14 @@ async def lifespan(app: FastAPI):
         db.close()
     yield
 
-# ... (rest of your routes) ...
-
-
-
 app = FastAPI(title="Hostra API", lifespan=lifespan)
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# Add your frontend URL to the allowed origins
 origins = [
-    "http://127.0.0.1:5500",  # Your local Live Server
+    "http://127.0.0.1:5500",
     "http://localhost:5500",
-    "https://hostra1.netlify.app" # Add your deployed frontend URL here later
+    "https://hostra1.netlify.app"
 ]
 
 app.add_middleware(
@@ -139,6 +130,7 @@ class LoginRequest(BaseModel):
 class ReviewRequest(BaseModel):
     transcribed_text: str
     rating: int = None
+
 @app.post("/auth/login")
 def login(req: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == req.email).first()
@@ -149,23 +141,34 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 @app.post("/auth/signup")
 def signup(email: str = Form(...), password: str = Form(...), name: str = Form(...), 
            role: str = Form(...), area: Optional[str] = Form(None), 
+           phone_number: Optional[str] = Form(None),
            id_image: Optional[UploadFile] = File(None), db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # We add wallet_balance=500000.0 here so they start with cash!
     new_user = User(
         email=email, 
         password=password, 
         name=name, 
         role=role, 
-        area=area, 
+        area=area,
+        phone_number=phone_number,
         is_id_verified=False,
-        wallet_balance=500000.0 
+        wallet_balance=500000.0,
+        profile_picture="/images/default_avatar.png"
     )
     db.add(new_user)
     db.commit()
     return {"success": True, "token": f"token_{new_user.email}"}
+
+@app.post("/users/profile-picture")
+def upload_pfp(image: UploadFile = File(...), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    file_path = f"uploads/pfp_{user.id}_{image.filename}"
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+    user.profile_picture = f"/{file_path}"
+    db.commit()
+    return {"success": True, "profile_picture": user.profile_picture}
 
 @app.post("/users/verify-id")
 def upload_id(id_image: UploadFile = File(...), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -193,7 +196,12 @@ def upload_id(id_image: UploadFile = File(...), user: User = Depends(get_current
 
 @app.get("/users/me")
 def get_profile(user: User = Depends(get_current_user)):
-    return {"name": user.name, "email": user.email, "role": user.role, "area": user.area, "wallet_balance": user.wallet_balance, "is_id_verified": user.is_id_verified}
+    return {
+        "name": user.name, "email": user.email, "role": user.role, 
+        "area": user.area, "wallet_balance": user.wallet_balance, 
+        "is_id_verified": user.is_id_verified, "profile_picture": user.profile_picture,
+        "phone_number": user.phone_number
+    }
 
 @app.post("/listings/")
 def create_listing(address: str = Form(...), area: str = Form(...), price: str = Form(...), 
@@ -224,7 +232,15 @@ def get_single_listing(listing_id: int, db: Session = Depends(get_db)):
     l = db.query(Listing).filter(Listing.id == listing_id).first()
     if not l:
         raise HTTPException(status_code=404, detail="Listing not found")
-    return {"id": l.id, "landlord_id": l.landlord_id, "address": l.address, "area": l.area, "price": l.price, "landlord_claims": l.landlord_claims, "image_path": l.image_path, "status": l.status}
+    landlord = db.query(User).filter(User.id == l.landlord_id).first()
+    return {
+        "id": l.id, "landlord_id": l.landlord_id, "address": l.address, "area": l.area, 
+        "price": l.price, "landlord_claims": l.landlord_claims, "image_path": l.image_path, 
+        "status": l.status,
+        "landlord_name": landlord.name if landlord else "Unknown",
+        "landlord_phone": landlord.phone_number if landlord else "Not provided",
+        "landlord_email": landlord.email if landlord else "Not provided"
+    }
 
 @app.get("/verify/feed")
 def get_verify_feed(show_all: bool = False, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -234,50 +250,57 @@ def get_verify_feed(show_all: bool = False, user: User = Depends(get_current_use
     listings = query.all()
     return {"listings": [{"id": l.id, "address": l.address, "area": l.area, "price": l.price, "landlord_claims": l.landlord_claims, "image_path": l.image_path, "status": l.status} for l in listings]}
 
-@app.post("/verify/{listing_id}")
-def verify_listing(listing_id: int, images: list[UploadFile] = File(...), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+# Look for your verify_listing route in main.py and update it with this logic:
+
+@app.post("/api/listings/{listing_id}/verify")
+async def verify_listing(
+    listing_id: int, 
+    images: List[UploadFile] = File(...), 
+    student_checklist: str = Form(...),
+    db: Session = Depends(get_db)
+):
     listing = db.query(Listing).filter(Listing.id == listing_id).first()
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
+
+    # The New Auditor Prompt for Gemma
+    ai_prompt = f"""
+    You are an honest auditor for a student housing platform. 
+    The landlord claimed this house has: {listing.landlord_claims}.
+    The student verifier on-site checked these items: {student_checklist}.
+    
+    Look at the provided inspection photos and the student's checklist. 
+    Rule 1: As long as the photos show a real physical property, the verdict MUST be "approved". Do not reject a real house just because a claim is missing.
+    Rule 2: Sort the landlord's claims. If a claim is proven true by the photos or checklist, put it in 'matched_claims'. If it is false or missing, put it in 'mismatched_claims'.
+    
+    You MUST return ONLY a valid JSON object exactly in this format, with no extra text:
+    {{
+        "verdict": "approved",
+        "matched_claims": ["claim 1", "claim 2"],
+        "mismatched_claims": ["claim 3"],
+        "reason": "Brief explanation of what you found."
+    }}
+    """
+
+    # ... (Your existing code to call the Gemini API goes here) ...
+    # ai_response_text = call_gemini_api(ai_prompt, images)
     
     try:
-        pil_images = [Image.open(img.file) for img in images]
-        prompt = f"""You are a strict property inspector. The landlord claims this property has: {listing.landlord_claims}. 
-        Look at these images. Return a JSON response with exactly these keys: 
-        'verdict' (must be exactly 'approved' or 'rejected'), 
-        'reason' (a short 1-sentence explanation), 
-        'matched_claims' (a list of strings of features you see), 
-        'mismatched_claims' (a list of strings of features missing)."""
-
-        response = client.models.generate_content(
-            model=MODEL_ID,
-            contents=pil_images + [prompt],
-            config=types.GenerateContentConfig(response_mime_type="application/json")
-        )
+        # Parse the JSON response from the AI
+        ai_data = json.loads(ai_response_text)
         
-        raw_text = response.text.strip().replace("```json", "").replace("```", "").strip()
-        ai_data = json.loads(raw_text)
+        # Update the listing in the database
+        listing.status = "verified" # The house is approved as real!
+        listing.ai_report = json.dumps(ai_data) # We save the buckets here
         
-        listing.status = "verified" if ai_data.get('verdict') == 'approved' else "rejected"
-        if listing.status == "verified":
-            user.wallet_balance += 1500.0
-        
-        report = VerificationReport(
-            listing_id=listing.id, verifier_id=user.id,
-            gemma_verdict=ai_data.get('verdict'), gemma_reason=ai_data.get('reason'),
-            submitted_photos=json.dumps([listing.image_path]), 
-            matched_claims=json.dumps(ai_data.get('matched_claims', [])),
-            mismatched_claims=json.dumps(ai_data.get('mismatched_claims', []))
-        )
-        db.add(report)
         db.commit()
-        db.refresh(listing)
-        db.refresh(user)
-        return {"success": True, "ai_response": ai_data, "new_wallet_balance": user.wallet_balance}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        
+        return {"success": True, "ai_response": ai_data, "message": "House verified and claims sorted!"}
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="AI failed to analyze the property correctly.")
+
+        
 @app.get("/listings/{listing_id}/verification-report")
 def get_report(listing_id: int, db: Session = Depends(get_db)):
     report = db.query(VerificationReport).filter(VerificationReport.listing_id == listing_id).first()
@@ -322,9 +345,39 @@ def translate_contract(image: UploadFile = File(...), user: User = Depends(get_c
         return {"raw_result": {"verdict": "error", "detail": str(e)}}
 
 @app.get("/wallet/me")
-def get_wallet(user: User = Depends(get_current_user)):
-    earnings = [{"type": "deposit", "amount": user.wallet_balance, "listing_address": "Various", "timestamp": "Recent"}] if user.wallet_balance > 0 else []
-    return {"wallet_balance": user.wallet_balance, "earnings": earnings}
+def get_wallet(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    earnings = []
+    
+    if user.role == "student":
+        earnings.append({"type": "deposit", "amount": 500000.0, "listing_address": "Sign-up Bonus", "timestamp": "Initial"})
+        
+        verifications = db.query(VerificationReport).filter(VerificationReport.verifier_id == user.id, VerificationReport.gemma_verdict == "approved").all()
+        for v in verifications:
+            lst = db.query(Listing).filter(Listing.id == v.listing_id).first()
+            addr = lst.address if lst else "Verified Property"
+            earnings.append({"type": "deposit", "amount": 3000.0, "listing_address": f"Verification - {addr}", "timestamp": "Recent"})
+            
+        tenant_txs = db.query(Transaction).filter(Transaction.tenant_id == user.id).all()
+        for tx in tenant_txs:
+            lst = db.query(Listing).filter(Listing.id == tx.listing_id).first()
+            addr = lst.address if lst else "Property"
+            amount = parse_price(lst.price)
+            if tx.is_split: amount /= 2
+            
+            if tx.status in ["held", "released"]:
+                earnings.append({"type": "withdrawal", "amount": amount, "listing_address": f"Rent Payment - {addr}", "timestamp": "Recent"})
+            elif tx.status == "refunded":
+                earnings.append({"type": "deposit", "amount": amount, "listing_address": f"Refund - {addr}", "timestamp": "Recent"})
+                
+    elif user.role == "landlord":
+        landlord_txs = db.query(Transaction).filter(Transaction.landlord_id == user.id, Transaction.status == "released").all()
+        for tx in landlord_txs:
+            lst = db.query(Listing).filter(Listing.id == tx.listing_id).first()
+            addr = lst.address if lst else "Property"
+            amount = parse_price(lst.price)
+            earnings.append({"type": "deposit", "amount": amount, "listing_address": f"Rent Received - {addr}", "timestamp": "Recent"})
+
+    return {"wallet_balance": user.wallet_balance, "earnings": earnings[::-1]}
 
 @app.post("/wallet/withdraw")
 def withdraw_wallet(body: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -340,7 +393,6 @@ def get_notifications(user: User = Depends(get_current_user), db: Session = Depe
     notes = db.query(Notification).filter(Notification.user_id == user.id).all()
     return {"notifications": [{"id": n.id, "message": n.message, "is_read": n.is_read} for n in notes]}
 
-# --- ROOMMATE API (Independent of properties) ---
 class RoommateRequestReq(BaseModel):
     roommate_id: int
 
@@ -388,7 +440,6 @@ def answer_roommate_request(invite_id: int, req: AnswerInviteRequest, user: User
     db.commit()
     return {"success": True}
 
-# --- SMART ESCROW API ---
 class EscrowPayRequest(BaseModel):
     listing_id: int
     is_split: bool = False
@@ -415,12 +466,10 @@ def pay_escrow(req: EscrowPayRequest, user: User = Depends(get_current_user), db
     )
     db.add(transaction)
     
-    # Smart Roommate Split Logic
     if req.is_split:
         roommate_pair = db.query(RoommatePair).filter(RoommatePair.status == "accepted", (RoommatePair.sender_id == user.id) | (RoommatePair.receiver_id == user.id)).first()
         roommate_id = roommate_pair.receiver_id if roommate_pair.sender_id == user.id else roommate_pair.sender_id
         
-        # Did the roommate already pay?
         roommate_tx = db.query(Transaction).filter(Transaction.listing_id == listing.id, Transaction.tenant_id == roommate_id, Transaction.status == "held").first()
         
         if roommate_tx:
@@ -432,10 +481,8 @@ def pay_escrow(req: EscrowPayRequest, user: User = Depends(get_current_user), db
     db.commit()
     return {"success": True, "message": "Payment locked in escrow successfully"}
 
-
 @app.get("/escrow/listing/{listing_id}")
 def check_escrow(listing_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # 1. Does the user have an accepted roommate?
     roommate_pair = db.query(RoommatePair).filter(
         RoommatePair.status == "accepted",
         (RoommatePair.sender_id == user.id) | (RoommatePair.receiver_id == user.id)
@@ -452,32 +499,29 @@ def check_escrow(listing_id: int, user: User = Depends(get_current_user), db: Se
         roommate_user = db.query(User).filter(User.id == roommate_id).first()
         roommate_name = roommate_user.name if roommate_user else "Your Roommate"
         
-        # 2. Did the roommate already pay their half?
         roommate_tx = db.query(Transaction).filter(
             Transaction.listing_id == listing_id, 
             Transaction.tenant_id == roommate_id, 
             Transaction.status.in_(["held", "released"])
         ).order_by(Transaction.id.desc()).first()
 
-    # 3. Did the current user pay?
     my_tx = db.query(Transaction).filter(Transaction.listing_id == listing_id, Transaction.tenant_id == user.id).order_by(Transaction.id.desc()).first()
 
-    # 4. The Grand Logic Decoder
     display_status = "unpaid"
     
     if my_tx and my_tx.status in ["held", "released"]:
         if my_tx.is_split:
             if roommate_tx:
-                display_status = my_tx.status # Fully funded (Held or Released)
+                display_status = my_tx.status
             else:
-                display_status = "waiting_for_roommate" # You paid, waiting for them
+                display_status = "waiting_for_roommate"
         else:
-            display_status = my_tx.status # You paid full
+            display_status = my_tx.status
     elif not my_tx or my_tx.status == "refunded":
         if roommate_tx:
-            display_status = "roommate_paid" # They paid, waiting for you!
+            display_status = "roommate_paid"
         else:
-            display_status = "unpaid" # Nobody paid
+            display_status = "unpaid"
 
     return {
         "success": True, 
@@ -551,11 +595,8 @@ def refund_escrow(tx_id: int, req: RefundRequest, user: User = Depends(get_curre
     db.commit()
     return {"success": True, "message": "Funds refunded securely."}
 
-# Reviews, Maintenance, Roommate Matching remain exactly identical...
 @app.post("/reviews/{listing_id}")
 def submit_review(listing_id: int, req: ReviewRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # The server now knows that 'req' must have 'transcribed_text' and 'rating'
-    # ... your existing logic here ...
     listing = db.query(Listing).filter(Listing.id == listing_id).first()
     if not listing: raise HTTPException(status_code=404, detail="Listing not found")
     prompt = f"Analyze this student review: '{req.transcribed_text}'. Return a JSON object with 'sentiment' (must be exactly 'positive', 'negative', or 'neutral') and 'gemma_summary' (a concise 3 to 5 word summary)."

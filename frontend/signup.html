@@ -61,7 +61,6 @@
                     <input type="text" id="fullName" required placeholder="Tunde O.">
                 </div>
 
-                <!-- Student specific fields -->
                 <div class="form-group conditional-field student-field active">
                     <label for="matricNumber">Matric Number</label>
                     <input type="text" id="matricNumber" placeholder="e.g. 210001">
@@ -74,14 +73,7 @@
                     <label for="studentArea">Area</label>
                     <input type="text" id="studentArea" placeholder="e.g. UnderG">
                 </div>
-                
-                <!-- Added ID Card Upload specifically for students -->
-                <div class="form-group conditional-field student-field active">
-                    <label for="studentIdFile">LAUTECH ID Card (Optional, required to earn as Verifier)</label>
-                    <input type="file" id="studentIdFile" accept="image/*" style="padding: 10px;">
-                </div>
 
-                <!-- Landlord specific fields -->
                 <div class="form-group conditional-field landlord-field">
                     <label for="phoneNumber">Phone Number</label>
                     <input type="tel" id="phoneNumber" placeholder="e.g. 08012345678">
@@ -122,8 +114,7 @@
             document.querySelectorAll('.student-field').forEach(el => {
                 el.classList.toggle('active', role === 'student');
                 const input = el.querySelector('input');
-                // Removed strict required check for image file so they can skip, but keep strings required
-                if (input && input.type !== 'file') input.required = (role === 'student');
+                if (input) input.required = (role === 'student');
             });
             
             document.querySelectorAll('.landlord-field').forEach(el => {
@@ -156,12 +147,8 @@
                 area: currentRole === 'student' ? document.getElementById('studentArea').value : null
             };
             
-            // Add image object manually if student provides it
-            if (currentRole === 'student') {
-                const fileInput = document.getElementById('studentIdFile');
-                if (fileInput.files.length > 0) {
-                    userData.id_image = fileInput.files[0];
-                }
+            if (currentRole === 'landlord') {
+                userData.phone_number = document.getElementById('phoneNumber').value;
             }
 
             try {

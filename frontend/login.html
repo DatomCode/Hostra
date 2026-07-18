@@ -30,13 +30,15 @@
                 </div>
                 
                 <button type="submit" class="btn btn-yellow btn-submit" id="loginBtn">Log In</button>
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <span style="color: #6B7280;">Don't have an account?</span> <a href="signup.html" style="color: var(--campus-blue); font-weight: 600; text-decoration: none;">Sign Up</a>
+                </div>
             </form>
         </div>
     </main>
 
     <script src="js/api.js"></script>
     <script>
-        // Redirect if already logged in
         if (session.isAuthenticated()) {
             const role = session.getRole();
             window.location.href = role === 'landlord' ? 'landlord-dashboard.html' : 'student-dashboard.html';

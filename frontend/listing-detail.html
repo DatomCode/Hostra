@@ -36,6 +36,26 @@
             margin-bottom: 1.5rem;
         }
         
+        /* New CSS for Big Truth Boxes */
+        .truth-box-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        .truth-box {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .box-green { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
+        .box-red { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+        .box-grey { background: #F9FAFB; color: #4B5563; border: 1px solid #E5E7EB; }
+        
         .sentiment-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -129,7 +149,6 @@
         <div id="loadingMsg" style="text-align: center; font-size: 1.25rem;">Loading property details...</div>
         
         <div id="contentWrapper" style="display: none;">
-            <!-- Top Section: Image & Details -->
             <div class="detail-grid">
                 <div>
                     <img id="detailImage" src="" alt="Property" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNFMkU4RjAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY0NzQ4YiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
@@ -138,7 +157,7 @@
                     <div id="detailPrice" class="listing-price"></div>
                     <div id="detailAddress" class="listing-address"></div>
                     
-                    <div style="display: inline-flex; align-items: center; color: var(--verified-green); font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.25rem; margin-bottom: 2rem;">
+                    <div id="detailVerificationStatus" style="display: inline-flex; align-items: center; color: var(--verified-green); font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.25rem; margin-bottom: 2rem;">
                         <span class="verified-seal" style="margin-left: 0; margin-right: 8px; width: 24px; height: 24px;">
                             <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         </span> 
@@ -146,17 +165,24 @@
                     </div>
                     
                     <h3 style="margin-bottom: 0.5rem;">Landlord Claims</h3>
-                    <p id="detailClaims" style="margin-bottom: 2rem;"></p>
+                    <!-- Replaced plain text with the Truth Box Container -->
+                    <div id="truthBoxes" class="truth-box-container"></div>
                     
                     <h3 style="margin-bottom: 0.5rem;">Tenancy Agreement</h3>
                     <p>Read the fine print before you pay. Upload the contract to check for hidden clauses.</p>
                     <a id="btnTranslator" href="#" class="btn btn-blue-outline" style="margin-top: 1rem;">Run Agreement Translator</a>
+                    
+                    <h3 style="margin-bottom: 0.5rem; margin-top: 2rem;">Landlord Contact Info</h3>
+                    <div style="background: var(--bg-cream); padding: 1.5rem; border-radius: 8px; border: 1px solid #E5E7EB;">
+                        <p style="margin-bottom: 0.5rem; color: #4B5563;"><strong>Name:</strong> <span id="detailLandlordName" style="color: var(--text-heavy);"></span></p>
+                        <p style="margin-bottom: 0.5rem; color: #4B5563;"><strong>Phone:</strong> <span id="detailLandlordPhone" style="color: var(--text-heavy);"></span></p>
+                        <p style="margin: 0; color: #4B5563;"><strong>Email:</strong> <span id="detailLandlordEmail" style="color: var(--text-heavy);"></span></p>
+                    </div>
                 </div>
             </div>
 
             <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 40px 0;">
 
-            <!-- Payment Section -->
             <div id="paymentSection" style="display: none; margin-bottom: 3rem; text-align: center;">
                 <div class="bento-card" style="display: inline-block; padding: 2rem; width: 100%; max-width: 450px; margin: 0 auto; text-align: left;">
                     <h3 style="margin-bottom: 1.5rem; text-align: center;">Rent Payment</h3>
@@ -164,7 +190,6 @@
                     <div id="paymentUnpaidState" style="display: none;">
                         <button id="btnPayRent" class="btn btn-yellow" style="width: 100%; margin-bottom: 1rem;">Pay Full Rent (Demo)</button>
                         
-                        <!-- Added an ID here so we can hide/show it based on roommate match! -->
                         <div id="splitRentOptionBox" style="background: var(--bg-cream); padding: 1.5rem; border-radius: 8px; text-align: center; margin-bottom: 1rem;">
                             <p style="font-weight: 600; font-size: 0.95rem; color: var(--text-heavy); margin-bottom: 0.5rem;">Split Rent Option</p>
                             <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 1rem;">Pair with a roommate and share the cost.</p>
@@ -205,7 +230,6 @@
                 </div>
             </div>
 
-            <!-- Maintenance Report Section (Shows only if moved in) -->
             <div id="maintenanceSection" style="display: none; margin-bottom: 3rem; text-align: center;">
                 <div class="bento-card" style="display: inline-block; padding: 2rem; width: 100%; max-width: 400px; margin: 0 auto; text-align: left;">
                     <h3 style="margin-bottom: 1.5rem; text-align: center; color: #EF4444;">Report Damage</h3>
@@ -225,7 +249,6 @@
                 </div>
             </div>
 
-            <!-- Verification Evidence Section -->
             <div id="verificationEvidenceSection" style="display: none; margin-bottom: 3rem;">
                 <div style="text-align: center; margin-bottom: 2rem;">
                     <h2>Verification Evidence</h2>
@@ -258,7 +281,6 @@
                 <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 40px 0;">
             </div>
 
-            <!-- Reviews Section -->
             <div style="text-align: center; margin-bottom: 3rem;">
                 <h2>Property Reviews</h2>
                 <p>Listen to what other students have to say</p>
@@ -321,7 +343,6 @@
 
         document.getElementById('btnTranslator').href = `contract.html?listing_id=${listingId}`;
 
-        // Load Listing Details
         async function loadListingDetails() {
             try {
                 const listing = await api.getListing(listingId);
@@ -333,7 +354,24 @@
                 document.getElementById('detailImage').src = `${API_BASE_URL}${listing.image_path}`;
                 document.getElementById('detailPrice').textContent = listing.price;
                 document.getElementById('detailAddress').textContent = listing.address;
-                document.getElementById('detailClaims').textContent = listing.landlord_claims;
+                
+                // Fallback for truth boxes if property is not verified yet
+                if (listing.status !== 'verified') {
+                    const claims = listing.landlord_claims ? listing.landlord_claims.split(',') : [];
+                    let boxesHtml = '';
+                    claims.forEach(c => {
+                        if(c.trim()) boxesHtml += `<div class="truth-box box-grey">⏳ ${c.trim()}</div>`;
+                    });
+                    document.getElementById('truthBoxes').innerHTML = boxesHtml || '<p>No claims provided.</p>';
+                }
+                
+                document.getElementById('detailLandlordName').textContent = listing.landlord_name;
+                document.getElementById('detailLandlordPhone').textContent = listing.landlord_phone;
+                document.getElementById('detailLandlordEmail').textContent = listing.landlord_email;
+                
+                if (listing.status === 'rejected') {
+                    document.getElementById('detailVerificationStatus').innerHTML = '<span style="background: #FEF2F2; color: #DC2626; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; border: 1px solid #FECACA;">Rejected ❌</span>';
+                }
                 
                 if (listing.status === 'verified') {
                     loadVerificationReport();
@@ -355,6 +393,22 @@
                 const data = await api.getVerificationReport(listingId);
                 if (data.success && data.report) {
                     const r = data.report;
+                    
+                    // --- New Truth Boxes Injection ---
+                    let boxesHtml = '';
+                    if (r.matched_claims && r.matched_claims.length > 0) {
+                        r.matched_claims.forEach(c => {
+                            boxesHtml += `<div class="truth-box box-green">✅ ${c}</div>`;
+                        });
+                    }
+                    if (r.mismatched_claims && r.mismatched_claims.length > 0) {
+                        r.mismatched_claims.forEach(c => {
+                            boxesHtml += `<div class="truth-box box-red">❌ ${c}</div>`;
+                        });
+                    }
+                    document.getElementById('truthBoxes').innerHTML = boxesHtml || '<div class="truth-box box-grey">No claims validated</div>';
+                    // ---------------------------------
+
                     document.getElementById('verificationEvidenceSection').style.display = 'block';
                     
                     document.getElementById('evidenceVerdict').textContent = r.gemma_verdict;
@@ -399,17 +453,15 @@
                 document.getElementById('paymentSection').style.display = 'block';
                 const data = await api.getEscrowForListing(listingId);
                 
-                // Hide everything first
                 document.getElementById('paymentUnpaidState').style.display = 'none';
                 document.getElementById('paymentHeldState').style.display = 'none';
                 document.getElementById('paymentReleasedState').style.display = 'none';
                 document.getElementById('paymentRefundedState').style.display = 'none';
                 document.getElementById('maintenanceSection').style.display = 'none';
 
-                currentTransactionId = data.tx_id; // Store ID if it exists
+                currentTransactionId = data.tx_id;
 
                 if (data.status === 'held') {
-                    // Fully funded!
                     document.getElementById('paymentHeldState').style.display = 'block';
                 } else if (data.status === 'released') {
                     document.getElementById('paymentReleasedState').style.display = 'block';
@@ -417,7 +469,6 @@
                 } else if (data.status === 'refunded') {
                     document.getElementById('paymentRefundedState').style.display = 'block';
                 } else if (data.status === 'waiting_for_roommate') {
-                    // You paid your half, they haven't paid yet
                     document.getElementById('paymentUnpaidState').style.display = 'block';
                     document.getElementById('paymentUnpaidState').innerHTML = `
                         <div style="background: #FEF3C7; border: 1px solid #FDE68A; padding: 1.5rem; border-radius: 8px; text-align: center;">
@@ -426,7 +477,6 @@
                         </div>
                     `;
                 } else if (data.status === 'roommate_paid') {
-                    // They paid their half, you need to pay yours!
                     document.getElementById('paymentUnpaidState').style.display = 'block';
                     document.getElementById('paymentUnpaidState').innerHTML = `
                         <div style="background: #ECFCCB; border: 1px solid #BEF264; padding: 1.5rem; border-radius: 8px; text-align: center; margin-bottom: 1rem;">
@@ -436,7 +486,6 @@
                         </div>
                     `;
                 } else {
-                    // Status is 'unpaid'. Nobody has paid anything.
                     document.getElementById('paymentUnpaidState').style.display = 'block';
                     
                     let html = `<button id="btnPayRent" class="btn btn-dark" style="width: 100%; margin-bottom: 1rem;" onclick="executePayment(false)">Pay Full Rent (Demo)</button>`;
@@ -457,7 +506,6 @@
             } catch(e) { console.error("Error loading escrow status", e); }
         }
 
-        // Helper function for the dynamic buttons we just created
         window.executePayment = async function(isSplit) {
             try {
                 alert("Processing Payment...");
@@ -508,7 +556,6 @@
             }
         });
 
-        // --- Refund Handler Scripts ---
         document.getElementById('btnRejectHouse')?.addEventListener('click', () => {
             document.getElementById('refundReasonSection').style.display = 'block';
             document.getElementById('btnConfirmMoveIn').style.display = 'none';
@@ -537,14 +584,14 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${session.getToken()}`
                     },
-                    body: JSON.stringify({ reason: reason }) // This matches the class RefundRequest
+                    body: JSON.stringify({ reason: reason })
                 });
                 
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.detail || "Refund failed");
                 
                 alert("Refund successful!");
-                window.location.reload(); // Refresh the page
+                window.location.reload();
             } catch(e) {
                 alert("Refund Error: " + e.message);
                 btn.disabled = false;
@@ -552,7 +599,6 @@
             }
         });
 
-        // Maintenance Logic
         document.getElementById('maintenanceForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnSubmitMaintenance');
@@ -582,7 +628,6 @@
             }
         });
         
-        // Reviews Logic
         const overallText = document.getElementById('overall-text');
         const reviewsList = document.getElementById('reviews-list');
         const btnRecord = document.getElementById('btn-record');
@@ -703,22 +748,17 @@
             const rating = ratingRadio ? parseInt(ratingRadio.value) : 3;
             
             if (!text) { alert('Please enter a review!'); return; }
-            if (!listingId) { alert('Error: No listing detected.'); return; } // Added check
+            if (!listingId) { alert('Error: No listing detected.'); return; }
 
             btnSubmit.disabled = true;
             btnSubmit.innerText = 'Submitting...';
 
             try {
-                // Log what we are sending so we can see if it's the right data
-                console.log("Submitting review for:", listingId, {text, rating});
                await api.submitReview(listingId, text, rating);
-               
-
-                alert('Review submitted successfully!');
-                reviewTextArea.value = '';
-                loadReviews();
+               alert('Review submitted successfully!');
+               reviewTextArea.value = '';
+               loadReviews();
             } catch (e) {
-                // Now you will see the REAL error in the browser console (F12)
                 console.error("Submission Error:", e);
                 alert("Server error: " + e.message);
             } finally {
@@ -726,6 +766,7 @@
                 btnSubmit.innerText = 'Submit Review';
             }
         });
+        
         loadListingDetails();
     </script>
 </body>
