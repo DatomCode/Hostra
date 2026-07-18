@@ -1,7 +1,7 @@
 import os
 import json
 import shutil
-from typing import Optional
+from typing import Optional, List
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Body
 from fastapi.middleware.cors import CORSMiddleware
@@ -252,16 +252,26 @@ def get_verify_feed(show_all: bool = False, user: User = Depends(get_current_use
 
 # Look for your verify_listing route in main.py and update it with this logic:
 
-@app.post("/api/listings/{listing_id}/verify")
+@app.post("/verify/{listing_id}")
 async def verify_listing(
     listing_id: int, 
     images: List[UploadFile] = File(...), 
     student_checklist: str = Form(...),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     listing = db.query(Listing).filter(Listing.id == listing_id).first()
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
+
+    saved_image_paths = []
+    loaded_images = []
+    for image in images:
+        file_path = f"uploads/{image.filename}"
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+        saved_image_paths.append(file_path)
+        loaded_images.append(Image.open(file_path))
 
     # The New Auditor Prompt for Gemma
     ai_prompt = f"""
@@ -282,15 +292,26 @@ async def verify_listing(
     }}
     """
 
-    # ... (Your existing code to call the Gemini API goes here) ...
-    # ai_response_text = call_gemini_api(ai_prompt, images)
-    
     try:
+        response = client.models.generate_content(
+            model=MODEL_ID,
+            contents=[ai_prompt, *loaded_images],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+        )
+        
+        raw_text = response.text.strip().replace("```json", "").replace("```", "").strip()
+        
         # Parse the JSON response from the AI
-        ai_data = json.loads(ai_response_text)
+        ai_data = json.loads(raw_text)
         
         # Update the listing in the database
-        listing.status = "verified" # The house is approved as real!
+        if ai_data.get("verdict", "").lower() == "approved":
+            listing.status = "verified" # The house is approved as real!
+        else:
+            listing.status = "pending"
+            
         listing.ai_report = json.dumps(ai_data) # We save the buckets here
         
         db.commit()
@@ -298,7 +319,7 @@ async def verify_listing(
         return {"success": True, "ai_response": ai_data, "message": "House verified and claims sorted!"}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail="AI failed to analyze the property correctly.")
+        return {"success": False, "error": f"AI verification failed: {str(e)}"}
 
         
 @app.get("/listings/{listing_id}/verification-report")
