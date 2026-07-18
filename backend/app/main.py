@@ -86,14 +86,20 @@ app = FastAPI(title="Hostra API", lifespan=lifespan)
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
+# Add your frontend URL to the allowed origins
+origins = [
+    "http://127.0.0.1:5500",  # Your local Live Server
+    "http://localhost:5500",
+    "https://hostra1.netlify.app" # Add your deployed frontend URL here later
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 security = HTTPBearer()
 
 def parse_price(price_val) -> float:
